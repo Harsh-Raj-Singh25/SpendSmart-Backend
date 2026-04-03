@@ -1,17 +1,49 @@
+# --- Build Artifacts ---
 target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
-dependency-reduced-pom.xml
-buildNumber.properties
-.mvn/timing.properties
-# https://maven.apache.org/wrapper/#usage-without-binary-jar
-.mvn/wrapper/maven-wrapper.jar
+build/
+out/
+bin/
+*.jar
+*.war
+*.ear
+*.class
 
-# Eclipse m2e generated files
-# Eclipse Core
+# --- KEEP Build Wrappers (Necessary for Deployment) ---
+!mvnw
+!mvnw.cmd
+!.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+
+!gradlew
+!gradlew.bat
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# --- IDE Specifics ---
+.idea/
+*.iml
+*.iws
+*.ipr
+.settings/
 .project
-# JDT-specific (Eclipse Java Development Tools)
 .classpath
+.factorypath
+.springBeans
+.sts4-cache
+.vscode/
+
+# --- Local Config & Secrets (Never Deploy These) ---
+.env
+.env.local
+application-*.properties
+application-*.yml
+# Exception: Keep the base config files
+!application.properties
+!application.yml
+
+# --- Logs & OS Files ---
+logs/
+*.log
+tmp/
+.DS_Store
+Thumbs.db
