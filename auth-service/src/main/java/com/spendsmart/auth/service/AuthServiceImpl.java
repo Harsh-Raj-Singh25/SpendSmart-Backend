@@ -5,6 +5,8 @@ import com.spendsmart.auth.entity.User;
 import com.spendsmart.auth.repository.UserRepository;
 import com.spendsmart.auth.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 // Spring uses that constructor to inject dependencies (constructor injection — best practice)
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
 	private final UserRepository userRepository;
@@ -20,19 +23,30 @@ public class AuthServiceImpl implements AuthService {
 	private final JwtUtil jwtUtil;
 
 	@Override
-	public User register(RegisterRequest request) {
+	public AuthResponse register(RegisterRequest request) {
+		log.info("Attempting to register new user with email: {}", request.getEmail());
+
 		// Guard clause — fail fast before doing any DB work
 		if (userRepository.existsByEmail(request.getEmail())) {
+			log.warn("Registration failed: Email {} is already registered", request.getEmail());
 			throw new RuntimeException("Email already registered");
 		}
 
 		// Builder pattern creates User with all @Builder.Default values applied
-		// We hash the password here — the raw password never touches the DB
 		User user = User.builder().fullName(request.getFullName()).email(request.getEmail())
 				.passwordHash(passwordEncoder.encode(request.getPassword())).build();
 
-		// .save() performs INSERT since userId is not set yet
-		return userRepository.save(user);
+		// Save the user to the database to generate the userId
+		User savedUser = userRepository.save(user);
+		log.info("User registered successfully with ID: {}", savedUser.getUserId());
+
+		// Generate a JWT token immediately so the user is logged in upon registration
+		String token = jwtUtil.generateToken(savedUser.getEmail(), savedUser.getUserId(), savedUser.getRole()// Assuming role is an Enum
+		);
+
+		// Return the secure DTO, completely hiding the password hash and DB metadata
+		return new AuthResponse(token, savedUser.getUserId(), savedUser.getFullName(), savedUser.getEmail(),
+				savedUser.getRole());
 	}
 
 	@Override
@@ -40,9 +54,12 @@ public class AuthServiceImpl implements AuthService {
 		// orElseThrow returns a clear error — we don't say "wrong password"
 		// specifically to avoid leaking whether the email exists (security best
 		// practice)
-		User user = userRepository.findByEmail(request.getEmail())
-				.orElseThrow(() -> new RuntimeException("Invalid email or password"));
+		log.info("Attempting login for email: {}", request.getEmail()); // Add tracing
 
+		User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> {
+			log.warn("Login failed: User not found for email: {}", request.getEmail());
+			return new RuntimeException("Invalid email or password");
+		});
 		// Reject login for deactivated accounts before checking password
 		if (!user.isActive()) {
 			throw new RuntimeException("Account is deactivated");
@@ -57,7 +74,7 @@ public class AuthServiceImpl implements AuthService {
 
 		// Generate JWT containing email, userId, and role as claims
 		String token = jwtUtil.generateToken(user.getEmail(), user.getUserId(), user.getRole());
-
+		log.info("Login successful for user ID: {}", user.getUserId());
 		return new AuthResponse(token, user.getUserId(), user.getFullName(), user.getEmail(), user.getRole());
 	}
 

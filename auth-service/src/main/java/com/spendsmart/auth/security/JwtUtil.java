@@ -4,6 +4,9 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import com.spendsmart.auth.model.enums.Role;
+
 import java.security.Key;
 import java.util.Date;
 
@@ -33,7 +36,7 @@ public class JwtUtil {
 //				.signWith(getKey(), SignatureAlgorithm.HS256) // sign with HMAC-SHA256
 //				.compact(); // serialise to the final JWT string
 //	}
-	public String generateToken(String email, int userId, String role) {
+	public String generateToken(String email, int userId, Role role) {
 		return Jwts.builder().subject(email) // subject() instead of setSubject()
 				.claim("userId", userId).claim("role", role).issuedAt(new Date()) // issuedAt() instead of setIssuedAt()
 				.expiration(new Date(System.currentTimeMillis() + expiration)) // expiration()
@@ -75,6 +78,10 @@ public class JwtUtil {
 //	}
 	private Claims getClaims(String token) {
 		return Jwts.parser().setSigningKey(getKey()).build().parseSignedClaims(token).getPayload();
+	}
+	
+	public String extractRole(String token) {
+	    return (String) getClaims(token).get("role");
 	}
 
 }

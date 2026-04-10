@@ -13,7 +13,8 @@ import com.spendsmart.auth.entity.User;
 public interface AuthService {
 
 	// Creates a new user account — throws exception if email already exists
-	User register(RegisterRequest request);
+	// AuthResponse instead of User
+	AuthResponse register(RegisterRequest request);
 
 	// Validates credentials and returns a JWT token if successful
 	AuthResponse login(LoginRequest request);

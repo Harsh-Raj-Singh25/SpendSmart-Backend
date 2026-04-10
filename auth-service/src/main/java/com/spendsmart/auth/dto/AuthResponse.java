@@ -1,5 +1,7 @@
 package com.spendsmart.auth.dto;
 
+import com.spendsmart.auth.model.enums.Role;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -11,5 +13,5 @@ public class AuthResponse {
 	private int userId;
 	private String fullName;
 	private String email;
-	private String role;
+	private Role role;
 }

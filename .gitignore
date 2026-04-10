@@ -47,3 +47,18 @@ logs/
 tmp/
 .DS_Store
 Thumbs.db
+
+# Eclipse/STS metadata
+.metadata/
+.settings/
+.project
+.classpath
+.factorypath
+
+# Build files
+target/
+bin/
+
+# OS files
+Thumbs.db
+.DS_Store

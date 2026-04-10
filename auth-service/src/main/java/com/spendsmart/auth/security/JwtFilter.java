@@ -35,13 +35,13 @@ public class JwtFilter extends OncePerRequestFilter {
                 // Token is valid — extract identity claims to build the Authentication object
                 String email = jwtUtil.extractEmail(token);
                 int userId = jwtUtil.extractUserId(token);
-
+                String role = jwtUtil.extractRole(token); // Extract the actual role
                 // UsernamePasswordAuthenticationToken is Spring Security's standard auth object
                 // Constructor: (principal, credentials, authorities)
                 // principal = email (who they are), credentials = null (we don't need the password again)
                 var auth = new UsernamePasswordAuthenticationToken(
                         email, null,
-                        List.of(new SimpleGrantedAuthority("ROLE_USER"))
+                        List.of(new SimpleGrantedAuthority("ROLE"+role))
                 );
 
                 // Store userId in the details field so controllers can retrieve it
