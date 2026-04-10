@@ -2,6 +2,8 @@ package com.spendsmart.auth.service;
 
 import com.spendsmart.auth.dto.*;
 import com.spendsmart.auth.entity.User;
+import com.spendsmart.auth.exception.BadRequestException;
+import com.spendsmart.auth.exception.ResourceNotFoundException;
 import com.spendsmart.auth.repository.UserRepository;
 import com.spendsmart.auth.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +31,7 @@ public class AuthServiceImpl implements AuthService {
 		// Guard clause — fail fast before doing any DB work
 		if (userRepository.existsByEmail(request.getEmail())) {
 			log.warn("Registration failed: Email {} is already registered", request.getEmail());
-			throw new RuntimeException("Email already registered");
+			throw new BadRequestException("Email already registered");
 		}
 
 		// Builder pattern creates User with all @Builder.Default values applied
@@ -41,7 +43,10 @@ public class AuthServiceImpl implements AuthService {
 		log.info("User registered successfully with ID: {}", savedUser.getUserId());
 
 		// Generate a JWT token immediately so the user is logged in upon registration
-		String token = jwtUtil.generateToken(savedUser.getEmail(), savedUser.getUserId(), savedUser.getRole()// Assuming role is an Enum
+		String token = jwtUtil.generateToken(savedUser.getEmail(), savedUser.getUserId(), savedUser.getRole()// Assuming
+																												// role
+																												// is an
+																												// Enum
 		);
 
 		// Return the secure DTO, completely hiding the password hash and DB metadata
@@ -58,11 +63,11 @@ public class AuthServiceImpl implements AuthService {
 
 		User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> {
 			log.warn("Login failed: User not found for email: {}", request.getEmail());
-			return new RuntimeException("Invalid email or password");
+			return new BadRequestException("Invalid email or password");
 		});
 		// Reject login for deactivated accounts before checking password
 		if (!user.isActive()) {
-			throw new RuntimeException("Account is deactivated");
+			throw new ResourceNotFoundException("Account is deactivated");
 		}
 
 		// passwordEncoder.matches() hashes the incoming raw password
@@ -95,18 +100,21 @@ public class AuthServiceImpl implements AuthService {
 		// Extract the email from the existing (still valid) token
 		// then issue a brand new token with a fresh expiry
 		String email = jwtUtil.extractEmail(token);
-		User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 		return jwtUtil.generateToken(user.getEmail(), user.getUserId(), user.getRole());
 	}
 
 	@Override
 	public User getUserById(int userId) {
-		return userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+		return userRepository.findById(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 	}
 
 	@Override
 	public User getUserByEmail(String email) {
-		return userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+		return userRepository.findByEmail(email)
+				.orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 	}
 
 	@Override
