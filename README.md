@@ -1,39 +1,42 @@
-# SpendSmart - Auth Service 🔐
+# SpendSmart - Expense Service
 
-The **Auth Service** is the foundational identity and security microservice for the SpendSmart Expense Tracker platform. It handles user registration, authentication, token lifecycle management, and Role-Based Access Control (RBAC). 
+## Overview
+The Expense Service is a core microservice within the SpendSmart ecosystem. It is responsible for managing all financial transactions, including logging expenses, handling splits, and providing aggregated financial data for users and categories.
 
-This service is built with enterprise best practices in mind, featuring strict data isolation, IDOR vulnerability prevention, stateless JWT authentication, and comprehensive unit testing.
+This service is fully decoupled from the Authentication and User management layers and relies entirely on JWT tokens processed by the API Gateway for request validation.
 
-## 🚀 Tech Stack
+## Tech Stack
+* **Java:** 21 (LTS)
+* **Framework:** Spring Boot 3.2.4
+* **Database:** MySQL 8 / Spring Data JPA
+* **Tools:** Lombok, Maven
 
-* **Java:** 25
-* **Framework:** Spring Boot 4.0.5
-* **Security:** Spring Security, JSON Web Tokens (JWT - `jjwt` 0.11.5), BCrypt Password Hashing
-* **Persistence:** Spring Data JPA, Hibernate, MySQL 8
-* **Testing:** JUnit 5, Mockito
-* **Tooling:** Lombok, SLF4J (Logging), Maven
+## Architecture & Communication
+* **Port:** Runs internally on `8082`.
+* **Gateway Routing:** All external traffic should be routed through the API Gateway (`http://localhost:8080/expenses/**`).
+* **Database Strategy:** Uses a dedicated schema (`spendsmart_expense`) to maintain microservice data isolation. User references are maintained via loose coupling (`userId` as an integer rather than a strict Foreign Key constraint to the Auth database).
 
-## ✨ Key Features
+## Key Endpoints
 
-* **Stateless Authentication:** Uses JWT for secure, scalable authentication without server-side sessions.
-* **Role-Based Access Control (RBAC):** Supports `USER` and `ADMIN` roles for granular endpoint protection.
-* **Security First:** * Prevents Insecure Direct Object Reference (IDOR) vulnerabilities by validating JWT identity against path variables.
-  * Raw passwords never touch the database; hashed using BCrypt (Strength 10).
-* **Soft Deletion:** Account deactivation flags users as inactive (`isActive = false`) to preserve historical financial data integrity.
-* **Cross-Origin Resource Sharing (CORS):** Configured to accept requests securely from the Angular frontend (`http://localhost:4200`).
-* **Traceability:** Implements structured SLF4J logging for monitoring authentication flows and exception handling.
+| HTTP Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/expenses` | Log a new expense |
+| `GET` | `/expenses/{expenseId}` | Fetch specific expense details |
+| `GET` | `/expenses/user/{userId}` | Get all expenses for a specific user |
+| `GET` | `/expenses/category/{categoryId}` | Get all expenses under a specific category |
+| `GET` | `/expenses/user/{userId}/dateRange` | Filter user expenses between two dates |
+| `GET` | `/expenses/user/{userId}/month` | Get user expenses for a specific Year & Month |
+| `GET` | `/expenses/user/{userId}/search` | Keyword search across title and notes |
+| `PUT` | `/expenses/{expenseId}` | Update an existing expense |
+| `DELETE`| `/expenses/{expenseId}` | Delete an expense |
+| `GET` | `/expenses/user/{userId}/total` | Get the aggregated total spent by a user |
 
-## 🛠️ Prerequisites
+## Database Configuration
+To run this service locally, ensure your MySQL instance is running and update the `application.yml` file with your local database credentials:
 
-* Java Development Kit (JDK) 25 or higher
-* MySQL Server 8.x
-* Maven 3.8+
-* Postman (for API testing)
-
-## ⚙️ Setup & Installation
-
-### 1. Database Configuration
-Log into your MySQL instance and create the database schema:
-
-```sql
-CREATE DATABASE spendsmart_auth;
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/spendsmart_expense?createDatabaseIfNotExist=true
+    username: root
+    password: <your_password>
