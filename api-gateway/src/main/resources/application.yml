@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  main:
+    web-application-type: reactive # Forces Spring to use WebFlux/Netty, ignoring MVC
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      # Global CORS Configuration (Handles CORS for the whole platform)
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:4200" # Your Angular Frontend
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            
+      # Routing Definitions
+      routes:
+        - id: auth-service
+          uri: http://localhost:8081     # Where the traffic should go
+          predicates:
+            - Path=/auth/** # What incoming URLs trigger this route
