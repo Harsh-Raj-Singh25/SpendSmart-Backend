@@ -1,43 +1,35 @@
-# SpendSmart - Income Service
+# SpendSmart - Category Service
 
 ## Overview
-The Income Service is a core domain microservice within the SpendSmart ecosystem. It handles all inbound cash flow operations, allowing users to log salaries, freelance payments, and investments. It features built-in recurrence tracking to power future forecasting and analytics.
-
-This service operates completely independently of the Expense and Auth services, maintaining a decoupled architecture via the API Gateway.
+The Category Service manages the financial taxonomy for the SpendSmart platform. It allows users to define custom categories for their income and expenses, assign visual identities (icons and colors), and set specific budget limits for granular financial tracking.
 
 ## Tech Stack
 * **Java:** 21 (LTS)
 * **Framework:** Spring Boot 3.2.4
 * **Database:** MySQL 8 / Spring Data JPA
-* **Tools:** Lombok, Maven
+* **Server:** Tomcat (Port 8084)
 
-## Architecture & Communication
-* **Port:** Runs internally on `8083`.
-* **Gateway Routing:** All external traffic is intercepted by the API Gateway and routed via `http://localhost:8080/incomes/**`.
-* **Database Strategy:** Uses a dedicated schema (`spendsmart_income`). Uses `BigDecimal` for all monetary values to prevent IEEE 754 floating-point precision loss.
+## Features
+* **Multi-Tenancy:** Categories are scoped to specific `userId`s.
+* **Default Seeding:** Automated initialization of standard categories (Food, Salary, etc.) for new users.
+* **Visual Identity:** Supports hex color codes and emojis/icons for frontend visualization.
+* **Budget Tracking:** Allows setting maximum spend limits per category.
 
-## Key Endpoints
+## API Specification
 
-| HTTP Method | Endpoint | Description |
+| Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/incomes` | Log a new income entry |
-| `GET` | `/incomes/{incomeId}` | Fetch specific income details |
-| `GET` | `/incomes/user/{userId}` | Get all income for a specific user |
-| `GET` | `/incomes/user/{userId}/source?source=SALARY` | Filter income by source Enum |
-| `GET` | `/incomes/user/{userId}/dateRange` | Filter income between two dates |
-| `GET` | `/incomes/user/{userId}/month` | Get user income for a specific Year & Month |
-| `GET` | `/incomes/user/{userId}/recurring` | Fetch only recurring income streams |
-| `PUT` | `/incomes/{incomeId}` | Update an existing income entry |
-| `DELETE`| `/incomes/{incomeId}` | Delete an income entry |
-| `GET` | `/incomes/user/{userId}/total` | Get total all-time income |
-| `GET` | `/incomes/user/{userId}/month/total` | Get aggregated income for a specific month |
+| `POST` | `/categories` | Create a custom category |
+| `POST` | `/categories/user/{userId}/initDefaults` | Seed default categories for a new user |
+| `GET` | `/categories/user/{userId}` | List all categories for a user |
+| `GET` | `/categories/user/{userId}/type` | List categories filtered by INCOME/EXPENSE |
+| `GET` | `/categories/defaults` | List system-wide default categories |
+| `PUT` | `/categories/{categoryId}` | Update category metadata |
+| `PATCH`| `/categories/{categoryId}/budget` | Update the budget limit for a category |
+| `DELETE`| `/categories/{categoryId}` | Remove a custom category |
+| `GET` | `/categories/user/{userId}/count` | Get total number of categories created |
 
-## Database Configuration
-To run this service locally, configure your `application.yml` with your MySQL credentials:
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/spendsmart_income?createDatabaseIfNotExist=true
-    username: root
-    password: <your_password>
+## Setup
+1. Configure `application.yml` with your local MySQL credentials.
+2. Ensure the `api-gateway` is configured to route `/categories/**` to port `8084`.
+3. Run `mvn clean install` to build and verify tests.

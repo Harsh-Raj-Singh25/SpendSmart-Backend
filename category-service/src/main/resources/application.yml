@@ -1,10 +1,11 @@
 server:
-  port: 8083
+  port: 8084
 
 spring:
   application:
-    name: income-service
+    name: category-service
   datasource:
+    # ADDED allowPublicKeyRetrieval=true TO THE END OF THIS LINE
     url: jdbc:mysql://localhost:3306/spendsmart_category?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
     username: root
     password: Harsh@SQL12  

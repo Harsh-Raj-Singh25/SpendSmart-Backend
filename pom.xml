@@ -15,6 +15,7 @@
         <module>api-gateway</module>
         <module>expense-service</module>
         <module>income-service</module>
+        <module>category-service</module>
     </modules>
 
     <parent>
