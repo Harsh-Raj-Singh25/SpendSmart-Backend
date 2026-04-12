@@ -41,3 +41,9 @@ spring:
           uri: http://localhost:8084
           predicates:
           - Path=/categories, /categories/**
+
+        - id: budget-service
+          uri: http://localhost:8085
+          predicates:
+          - Path=/budgets, /budgets/**
+            
