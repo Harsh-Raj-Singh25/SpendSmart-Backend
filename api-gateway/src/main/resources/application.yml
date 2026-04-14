@@ -51,3 +51,8 @@ spring:
           uri: http://localhost:8086
           predicates:
           - Path=/analytics, /analytics/**
+
+        - id: recurring-transaction-service
+          uri: http://localhost:8087
+          predicates:
+          - Path=/recurring, /recurring/**

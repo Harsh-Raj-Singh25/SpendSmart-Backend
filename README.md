@@ -1,45 +1,44 @@
-# SpendSmart - Analytics & Report Service
+# SpendSmart - Recurring Transaction Service
 
 ## Overview
-The Analytics Service is the data intelligence layer of the SpendSmart platform. Unlike the transactional services (Income, Expense, Budget), this service acts as an aggregator. It relies entirely on synchronous inter-service communication via Spring Cloud OpenFeign to gather raw financial data, process complex algorithms, and deliver dashboard-ready payloads to the frontend.
+The Recurring Transaction Service is the automation engine of the SpendSmart platform. It allows users to set up "set-and-forget" financial rules (subscriptions, rent, salaries). Utilizing Spring's `@Scheduled` tasks and OpenFeign, it wakes up daily to autonomously generate records in the Expense and Income services without requiring user interaction.
 
 ## Tech Stack
 * **Java:** 21 (LTS)
 * **Framework:** Spring Boot 3.2.4
 * **Inter-Service Communication:** Spring Cloud OpenFeign
 * **Database:** MySQL 8 / Spring Data JPA
-* **Server:** Tomcat (Port 8086)
+* **Server:** Tomcat (Port 8087)
 
 ## Core Capabilities
-* **Financial Health Score Algorithm:** Computes a 0-100 score based on savings rate (40 weight), budget adherence (40 weight), and expense-to-income ratio (20 weight).
-* **Predictive Forecasting:** Uses a 3-month trailing average combined with a calculated momentum factor to predict future spending.
-* **Data Aggregation:** Consolidates daily trends, category breakdowns, and yearly summaries across isolated microservice databases.
-* **Historical Snapshots:** Persists monthly financial states to allow for rapid querying of long-term trends without recalculating historical data.
+* **Background Automation:** A `@Scheduled` cron job runs automatically at midnight (00:00) server time to evaluate all active recurring rules.
+* **Smart Date Math:** Automatically calculates the `nextDueDate` based on the selected frequency (Daily, Weekly, Monthly, Quarterly, Yearly), gracefully handling leap years and end-of-month edge cases via Java's `LocalDate` API.
+* **Auto-Deactivation:** Rules containing an optional `endDate` automatically deactivate themselves once the final billing cycle is completed.
+* **Cross-Service Delegation:** Uses generic DTOs over OpenFeign to route generated transactions to either the Income or Expense microservice based on the `TransactionType` enum.
 
 ## API Specification
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/analytics/user/{userId}/snapshot` | Generate and save a financial snapshot for a specific month |
-| `GET` | `/analytics/user/{userId}/health` | Calculate the real-time Financial Health Score |
-| `GET` | `/analytics/user/{userId}/forecast` | Calculate the predictive spending forecast |
-| `GET` | `/analytics/user/{userId}/summary/monthly` | Get aggregated monthly income/expense/savings |
-| `GET` | `/analytics/user/{userId}/summary/yearly` | Get aggregated yearly data and average savings rate |
-| `GET` | `/analytics/user/{userId}/breakdown/category` | Get expense totals grouped by category ID |
-| `GET` | `/analytics/user/{userId}/trend/daily` | Get daily spending mapped by day of the month |
-| `GET` | `/analytics/user/{userId}/cashflow` | Compare total inflow vs total outflow |
+| `POST` | `/recurring` | Create a new recurring transaction rule |
+| `GET` | `/recurring/{id}` | Get a specific recurring rule |
+| `GET` | `/recurring/user/{userId}` | Get all rules for a user |
+| `GET` | `/recurring/user/{userId}/active` | Get only currently active rules |
+| `GET` | `/recurring/user/{userId}/upcoming` | Get active rules due before the end of the current month |
+| `PUT` | `/recurring/{id}` | Update rule details (amount, frequency, etc.) |
+| `PATCH`| `/recurring/{id}/deactivate` | Soft-delete/pause the recurring rule |
+| `DELETE`| `/recurring/{id}` | Hard delete the rule from the database |
 
-## Configuration
-This service requires the following microservices to be running and accessible:
-* `income-service` (localhost:8083)
-* `expense-service` (localhost:8082)
-* `budget-service` (localhost:8085)
-
-Configure `application.yml` with your local MySQL credentials:
+## Configuration & Deployment
+Ensure `@EnableScheduling` and `@EnableFeignClients` are active on the main application class.
 
 ```yaml
+server:
+  port: 8087
 spring:
+  application:
+    name: recurring-service
   datasource:
-    url: jdbc:mysql://localhost:3306/spendsmart_analytics?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/spendsmart_recurring?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
     username: root
     password: <your_password>
