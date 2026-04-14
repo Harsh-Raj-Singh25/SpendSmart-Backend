@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,28 +22,27 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
-public class ExpenseServiceImpl  implements ExpenseService{
+public class ExpenseServiceImpl implements ExpenseService {
 	private final ExpenseRepository expenseRepository; //
-	private final BudgetServiceClient budgetServiceClient; // <--  Inject the Client
+	private final BudgetServiceClient budgetServiceClient; // <-- Inject the Client
+
 	@Override
-	public Expense addExpense(Expense expense) { 
-		log.info("Adding new expense for user: {}",expense.getUserId());
-		Expense savedExpense=expenseRepository.save(expense);
-		// TODO: As per document  , trigger Budget-Service to increment spentAmount
-        // This will be implemented later via Kafka or OpenFeign
+	public Expense addExpense(Expense expense) {
+		log.info("Adding new expense for user: {}", expense.getUserId());
+		Expense savedExpense = expenseRepository.save(expense);
+		// TODO: As per document , trigger Budget-Service to increment spentAmount
+		// This will be implemented later via Kafka or OpenFeign
 		// implementation
 		// 2. Call the Budget Service synchronously!
-        try {
-            budgetServiceClient.updateSpentAmountByCategory(
-                    savedExpense.getUserId(), 
-                    savedExpense.getCategoryId(), 
-                    savedExpense.getAmount()
-            );
-            log.info("Successfully updated budget for category: {}", savedExpense.getCategoryId());
-        } catch (Exception e) {
-            log.error("Failed to update budget. Budget Service might be down: {}", e.getMessage());
-            // We catch the error so the Expense still saves even if the Budget service is temporarily offline
-        }
+		try {
+			budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), savedExpense.getCategoryId(),
+					savedExpense.getAmount());
+			log.info("Successfully updated budget for category: {}", savedExpense.getCategoryId());
+		} catch (Exception e) {
+			log.error("Failed to update budget. Budget Service might be down: {}", e.getMessage());
+			// We catch the error so the Expense still saves even if the Budget service is
+			// temporarily offline
+		}
 		return savedExpense;
 	}
 
@@ -50,12 +51,12 @@ public class ExpenseServiceImpl  implements ExpenseService{
 	public Expense getExpenseById(Long expenseId) {
 		// TODO Auto-generated method stub
 		return expenseRepository.findByExpenseId(expenseId)
-				.orElseThrow(()-> new RuntimeException("Expense not found with ID: "+expenseId));
-		
+				.orElseThrow(() -> new RuntimeException("Expense not found with ID: " + expenseId));
+
 	}
 
 	@Override
-	@Transactional(readOnly= true)
+	@Transactional(readOnly = true)
 	public List<Expense> getExpensesByUser(Integer userId) {
 		// TODO Auto-generated method stub
 		return expenseRepository.findByUserId(userId);
@@ -70,17 +71,17 @@ public class ExpenseServiceImpl  implements ExpenseService{
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<Expense> getExpensesByDateRange(Integer userId,LocalDate start, LocalDate end) {
+	public List<Expense> getExpensesByDateRange(Integer userId, LocalDate start, LocalDate end) {
 		// TODO Auto-generated method stub
-		 return expenseRepository.findByUserIdAndDateBetween(userId, start, end);
+		return expenseRepository.findByUserIdAndDateBetween(userId, start, end);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public List<Expense> getExpensesByMonth(Integer userId, int year, int month) {
 		// TODO Auto-generated method stub
-		YearMonth yearMonth=YearMonth.of(year, month);
-		LocalDate startDate=yearMonth.atDay(1);
+		YearMonth yearMonth = YearMonth.of(year, month);
+		LocalDate startDate = yearMonth.atDay(1);
 		LocalDate endDate = yearMonth.atEndOfMonth();
 		return expenseRepository.findByUserIdAndDateBetween(userId, startDate, endDate);
 	}
@@ -103,73 +104,75 @@ public class ExpenseServiceImpl  implements ExpenseService{
 		// TODO Auto-generated method stub
 		log.info("Updating expense ID:{}", expenseId);
 		Expense existingExpense = getExpenseById(expenseId);
-		
+
 		// Store the old values BEFORE we change them so we can do math later
-        BigDecimal oldAmount = existingExpense.getAmount();
-        Long oldCategoryId = existingExpense.getCategoryId();
-        
+		BigDecimal oldAmount = existingExpense.getAmount();
+		Long oldCategoryId = existingExpense.getCategoryId();
+
 		existingExpense.setCategoryId(expenseDetails.getCategoryId());
 		existingExpense.setTitle(expenseDetails.getTitle());
-        existingExpense.setAmount(expenseDetails.getAmount());
-        existingExpense.setCurrency(expenseDetails.getCurrency());
-        existingExpense.setType(expenseDetails.getType());
-        existingExpense.setPaymentMethod(expenseDetails.getPaymentMethod());
-        existingExpense.setDate(expenseDetails.getDate());
-        existingExpense.setNotes(expenseDetails.getNotes());
-        existingExpense.setReceiptUrl(expenseDetails.getReceiptUrl());
+		existingExpense.setAmount(expenseDetails.getAmount());
+		existingExpense.setCurrency(expenseDetails.getCurrency());
+		existingExpense.setType(expenseDetails.getType());
+		existingExpense.setPaymentMethod(expenseDetails.getPaymentMethod());
+		existingExpense.setDate(expenseDetails.getDate());
+		existingExpense.setNotes(expenseDetails.getNotes());
+		existingExpense.setReceiptUrl(expenseDetails.getReceiptUrl());
 //        existingExpense.setRecurring(expenseDetails.isRecurring()); -> if the primitive boolean is used
-        existingExpense.setIsRecurring(expenseDetails.getIsRecurring());
-        
-        Expense savedExpense = expenseRepository.save(existingExpense);
-     // TODO: Adjust Budget-Service (calculate difference and update)
-     // Sync with Budget Service
-        try {
-            if (!oldCategoryId.equals(savedExpense.getCategoryId())) {
-                // Scenario A: The user changed the category of the expense!
-                // 1. Refund the old budget
-                budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), oldCategoryId, oldAmount.negate());
-                // 2. Charge the new budget
-                budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), savedExpense.getCategoryId(), savedExpense.getAmount());
-                log.info("Cross-category budget sync completed.");
-            } else if (oldAmount.compareTo(savedExpense.getAmount()) != 0) {
-                // Scenario B: The category is the same, but the amount changed
-                BigDecimal difference = savedExpense.getAmount().subtract(oldAmount);
-                budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), savedExpense.getCategoryId(), difference);
-                log.info("Budget sync completed. Amount adjusted by: {}", difference);
-            }
-        } catch (Exception e) {
-            log.error("Failed to sync budget during expense update. Budget service might be down: {}", e.getMessage());
-        }
+		existingExpense.setIsRecurring(expenseDetails.getIsRecurring());
 
-        return savedExpense;
+		Expense savedExpense = expenseRepository.save(existingExpense);
+		// TODO: Adjust Budget-Service (calculate difference and update)
+		// Sync with Budget Service
+		try {
+			if (!oldCategoryId.equals(savedExpense.getCategoryId())) {
+				// Scenario A: The user changed the category of the expense!
+				// 1. Refund the old budget
+				budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), oldCategoryId,
+						oldAmount.negate());
+				// 2. Charge the new budget
+				budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), savedExpense.getCategoryId(),
+						savedExpense.getAmount());
+				log.info("Cross-category budget sync completed.");
+			} else if (oldAmount.compareTo(savedExpense.getAmount()) != 0) {
+				// Scenario B: The category is the same, but the amount changed
+				BigDecimal difference = savedExpense.getAmount().subtract(oldAmount);
+				budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), savedExpense.getCategoryId(),
+						difference);
+				log.info("Budget sync completed. Amount adjusted by: {}", difference);
+			}
+		} catch (Exception e) {
+			log.error("Failed to sync budget during expense update. Budget service might be down: {}", e.getMessage());
+		}
+
+		return savedExpense;
 	}
 
 	@Override
-    public void deleteExpense(Long expenseId) {
-        log.info("Deleting expense ID: {}", expenseId);
-        Expense existingExpense = getExpenseById(expenseId); 
-        
-        expenseRepository.deleteByExpenseId(expenseId);
+	public void deleteExpense(Long expenseId) {
+		log.info("Deleting expense ID: {}", expenseId);
+		Expense existingExpense = getExpenseById(expenseId);
 
-        // Sync with Budget Service by sending a negative amount (Refund)
-        try {
-            budgetServiceClient.updateSpentAmountByCategory(
-                    existingExpense.getUserId(), 
-                    existingExpense.getCategoryId(), 
-                    existingExpense.getAmount().negate() // .negate() turns 500 into -500
-            );
-            log.info("Successfully refunded budget for deleted expense.");
-        } catch (Exception e) {
-            log.error("Failed to refund budget. Budget service might be down: {}", e.getMessage());
-        }
-    }
+		expenseRepository.deleteByExpenseId(expenseId);
+
+		// Sync with Budget Service by sending a negative amount (Refund)
+		try {
+			budgetServiceClient.updateSpentAmountByCategory(existingExpense.getUserId(),
+					existingExpense.getCategoryId(), existingExpense.getAmount().negate() // .negate() turns 500 into
+																							// -500
+			);
+			log.info("Successfully refunded budget for deleted expense.");
+		} catch (Exception e) {
+			log.error("Failed to refund budget. Budget service might be down: {}", e.getMessage());
+		}
+	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public BigDecimal getTotalByUser(Integer userId) {
 		// TODO Auto-generated method stub
 		BigDecimal total = expenseRepository.sumAmountByUserId(userId);
-		return total !=null ? total : BigDecimal.ZERO;
+		return total != null ? total : BigDecimal.ZERO;
 	}
 
 	@Override
@@ -179,8 +182,43 @@ public class ExpenseServiceImpl  implements ExpenseService{
 		BigDecimal total = expenseRepository.sumAmountByCategoryId(categoryId);
 		return total != null ? total : BigDecimal.ZERO;
 	}
-	 
-	
-	
-	
+
+	// for analytics service
+	@Override
+	public BigDecimal getTotalExpenseByYear(Integer userId, int year) {
+		LocalDate start = LocalDate.of(year, 1, 1);
+		LocalDate end = LocalDate.of(year, 12, 31);
+		BigDecimal total = expenseRepository.sumAmountByUserIdAndDateBetween(userId, start, end);
+		return total != null ? total : BigDecimal.ZERO;
+	}
+
+	@Override
+	public Map<String, BigDecimal> getExpenseBreakdownByCategory(Integer userId, int year, int month) {
+		LocalDate start = YearMonth.of(year, month).atDay(1);
+		LocalDate end = YearMonth.of(year, month).atEndOfMonth();
+		List<Expense> expenses = expenseRepository.findByUserIdAndDateBetween(userId, start, end);
+
+		// Grouping by Category ID (Returned as a String to match the Feign contract)
+		return expenses.stream().collect(Collectors.groupingBy(e -> String.valueOf(e.getCategoryId()), // e.g., "101"
+				Collectors.reducing(BigDecimal.ZERO, Expense::getAmount, BigDecimal::add)));
+	}
+
+	@Override
+	public Map<Integer, BigDecimal> getDailyExpenseTrend(Integer userId, int year, int month) {
+		LocalDate start = YearMonth.of(year, month).atDay(1);
+		LocalDate end = YearMonth.of(year, month).atEndOfMonth();
+		List<Expense> expenses = expenseRepository.findByUserIdAndDateBetween(userId, start, end);
+
+		// Grouping by the Day of the Month
+		return expenses.stream().collect(Collectors.groupingBy(e -> e.getDate().getDayOfMonth(),
+				Collectors.reducing(BigDecimal.ZERO, Expense::getAmount, BigDecimal::add)));
+	}
+
+	@Override
+	public BigDecimal getTotalExpenseByMonth(Integer userId, int year, int month) {
+		LocalDate start = java.time.YearMonth.of(year, month).atDay(1);
+		LocalDate end = java.time.YearMonth.of(year, month).atEndOfMonth();
+		BigDecimal total = expenseRepository.sumAmountByUserIdAndDateBetween(userId, start, end);
+		return total != null ? total : BigDecimal.ZERO;
+	}
 }

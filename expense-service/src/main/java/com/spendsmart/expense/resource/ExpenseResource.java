@@ -3,6 +3,7 @@ package com.spendsmart.expense.resource;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -28,69 +29,89 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ExpenseResource {
 	private final ExpenseService expenseService;
-	
+
 	@PostMapping
-	public ResponseEntity<Expense> addExpense(@RequestBody Expense expense){
-		return new ResponseEntity<>(expenseService.addExpense(expense),HttpStatus.CREATED);
+	public ResponseEntity<Expense> addExpense(@RequestBody Expense expense) {
+		return new ResponseEntity<>(expenseService.addExpense(expense), HttpStatus.CREATED);
 	}
-	
+
 	@GetMapping("/{expenseId}")
-	public ResponseEntity<Expense> getExpenseById(@PathVariable Long expenseId){
+	public ResponseEntity<Expense> getExpenseById(@PathVariable Long expenseId) {
 		return ResponseEntity.ok(expenseService.getExpenseById(expenseId));
 	}
-	
+
 	@GetMapping("/user/{userId}")
-	public ResponseEntity<List<Expense>> getExpensesByUser(@PathVariable Integer userId){
+	public ResponseEntity<List<Expense>> getExpensesByUser(@PathVariable Integer userId) {
 		return ResponseEntity.ok(expenseService.getExpensesByUser(userId));
 	}
-	
+
 	@GetMapping("/category/{categoryId}")
-    public ResponseEntity<List<Expense>> getExpensesByCategory(@PathVariable Long categoryId) {
-        return ResponseEntity.ok(expenseService.getExpensesByCategory(categoryId));
-    }
-	
+	public ResponseEntity<List<Expense>> getExpensesByCategory(@PathVariable Long categoryId) {
+		return ResponseEntity.ok(expenseService.getExpensesByCategory(categoryId));
+	}
+
 	@GetMapping("/user/{userId}/dateRange")
-	public ResponseEntity<List<Expense>> getExpensesByDateRange(@PathVariable Integer userId, 
-			@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate startDate,
-			@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate endDate
-			){
+	public ResponseEntity<List<Expense>> getExpensesByDateRange(@PathVariable Integer userId,
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 		return ResponseEntity.ok(expenseService.getExpensesByDateRange(userId, startDate, endDate));
 	}
-	
+
 	@GetMapping("/user/{userId}/type")
-    public ResponseEntity<List<Expense>> getExpensesByType(
-            @PathVariable Integer userId,
-            @RequestParam ExpenseType type) {
-        return ResponseEntity.ok(expenseService.getExpensesByType(userId, type));
-    }
-	
+	public ResponseEntity<List<Expense>> getExpensesByType(@PathVariable Integer userId,
+			@RequestParam ExpenseType type) {
+		return ResponseEntity.ok(expenseService.getExpensesByType(userId, type));
+	}
+
 	@GetMapping("/user/{userId}/search")
-    public ResponseEntity<List<Expense>> searchExpenses(
-            @PathVariable Integer userId,
-            @RequestParam String keyword) {
-        return ResponseEntity.ok(expenseService.searchExpenses(userId, keyword));
-    }
-	
+	public ResponseEntity<List<Expense>> searchExpenses(@PathVariable Integer userId, @RequestParam String keyword) {
+		return ResponseEntity.ok(expenseService.searchExpenses(userId, keyword));
+	}
+
 	@PutMapping("/{expenseId}")
-    public ResponseEntity<Expense> updateExpense(
-            @PathVariable Long expenseId,
-            @RequestBody Expense expense) {
-        return ResponseEntity.ok(expenseService.updateExpense(expenseId, expense));
-    }
+	public ResponseEntity<Expense> updateExpense(@PathVariable Long expenseId, @RequestBody Expense expense) {
+		return ResponseEntity.ok(expenseService.updateExpense(expenseId, expense));
+	}
+
 	@DeleteMapping("/{expenseId}")
-    public ResponseEntity<Void> deleteExpense(@PathVariable Long expenseId) {
-        expenseService.deleteExpense(expenseId);
-        return ResponseEntity.noContent().build();
-    }
-	
+	public ResponseEntity<Void> deleteExpense(@PathVariable Long expenseId) {
+		expenseService.deleteExpense(expenseId);
+		return ResponseEntity.noContent().build();
+	}
+
 	@GetMapping("/user/{userId}/total")
-    public ResponseEntity<BigDecimal> getTotalByUser(@PathVariable Integer userId) {
-        return ResponseEntity.ok(expenseService.getTotalByUser(userId));
-    }
-	
+	public ResponseEntity<BigDecimal> getTotalByUser(@PathVariable Integer userId) {
+		return ResponseEntity.ok(expenseService.getTotalByUser(userId));
+	}
+
 	@GetMapping("/category/{categoryId}/total")
-    public ResponseEntity<BigDecimal> getTotalByCategory(@PathVariable Long categoryId) {
-        return ResponseEntity.ok(expenseService.getTotalByCategory(categoryId));
-    }
+	public ResponseEntity<BigDecimal> getTotalByCategory(@PathVariable Long categoryId) {
+		return ResponseEntity.ok(expenseService.getTotalByCategory(categoryId));
+	}
+
+	// for analytics service
+	@GetMapping("/user/{userId}/year/total")
+	public ResponseEntity<BigDecimal> getTotalExpenseByYear(@PathVariable Integer userId, @RequestParam int year) {
+		return ResponseEntity.ok(expenseService.getTotalExpenseByYear(userId, year));
+	}
+
+	@GetMapping("/user/{userId}/month/breakdown")
+	public ResponseEntity<Map<String, BigDecimal>> getExpenseBreakdownByCategory(@PathVariable Integer userId,
+			@RequestParam int year, @RequestParam int month) {
+		return ResponseEntity.ok(expenseService.getExpenseBreakdownByCategory(userId, year, month));
+	}
+
+	@GetMapping("/user/{userId}/month/daily")
+	public ResponseEntity<Map<Integer, BigDecimal>> getDailyExpenseTrend(@PathVariable Integer userId,
+			@RequestParam int year, @RequestParam int month) {
+		return ResponseEntity.ok(expenseService.getDailyExpenseTrend(userId, year, month));
+	}
 	
+	@GetMapping("/user/{userId}/month/total")
+    public ResponseEntity<BigDecimal> getTotalExpenseByMonth(
+            @PathVariable Integer userId, 
+            @RequestParam int year, 
+            @RequestParam int month) {
+        return ResponseEntity.ok(expenseService.getTotalExpenseByMonth(userId, year, month));
+    }
 }

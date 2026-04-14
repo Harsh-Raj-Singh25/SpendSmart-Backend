@@ -70,19 +70,23 @@ public class BudgetResource {
 		budgetService.resetBudgetPeriod(userId);
 		return ResponseEntity.ok().build();
 	}
-	
+
 	// OpenFeign integration
 	@PutMapping("/user/{userId}/category/{categoryId}/spent")
-    public ResponseEntity<Void> updateSpentAmountByCategory(
-            @PathVariable Integer userId,
-            @PathVariable Integer categoryId,
-            @RequestParam BigDecimal amount) {
-        
-        // Find the budget for this user and category, and update it if it exists
-        budgetService.getBudgetsByCategory(userId, categoryId).ifPresent(budget -> {
-            budgetService.updateSpentAmount(budget.getBudgetId(), amount);
-        });
-        
-        return ResponseEntity.ok().build();
-    }
+	public ResponseEntity<Void> updateSpentAmountByCategory(@PathVariable Integer userId,
+			@PathVariable Integer categoryId, @RequestParam BigDecimal amount) {
+
+		// Find the budget for this user and category, and update it if it exists
+		budgetService.getBudgetsByCategory(userId, categoryId).ifPresent(budget -> {
+			budgetService.updateSpentAmount(budget.getBudgetId(), amount);
+		});
+
+		return ResponseEntity.ok().build();
+	}
+
+	// for analytics service
+	@GetMapping("/user/{userId}/adherence")
+	public ResponseEntity<Double> getOverallBudgetAdherence(@PathVariable Integer userId) {
+		return ResponseEntity.ok(budgetService.getOverallBudgetAdherence(userId));
+	}
 }

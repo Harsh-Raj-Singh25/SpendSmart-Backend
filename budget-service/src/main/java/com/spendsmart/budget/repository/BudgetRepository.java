@@ -3,6 +3,7 @@ package com.spendsmart.budget.repository;
 import com.spendsmart.budget.entity.Budget;
 import com.spendsmart.budget.model.enums.BudgetPeriod;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -25,5 +26,6 @@ public interface BudgetRepository extends JpaRepository<Budget, Integer> {
 
 	int countByUserId(Integer userId);
 
-	void deleteByBudgetId(Integer budgetId);
+    @Query("SELECT b FROM Budget b WHERE b.budgetId = :budgetId")
+    void deleteByBudgetId(Integer budgetId);
 }

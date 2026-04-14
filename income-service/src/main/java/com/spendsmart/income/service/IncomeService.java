@@ -26,7 +26,10 @@ public interface IncomeService {
 
 	BigDecimal getTotalIncomeByUser(Integer userId);
 
-	BigDecimal getTotalIncomeByMonth(Integer userId, int year, int month);
-
+	BigDecimal getTotalIncomeByMonth(Integer userId, int year, int month);  // also used by analytics service
+ 
 	List<Income> getRecurringIncomes(Integer userId);
+	
+	// for analytics-service
+	BigDecimal getTotalIncomeByYear(Integer userId, int year); 
 }

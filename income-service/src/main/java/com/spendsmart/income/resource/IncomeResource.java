@@ -18,74 +18,72 @@ import java.util.List;
 @RequiredArgsConstructor
 public class IncomeResource {
 
-    private final IncomeService incomeService;
+	private final IncomeService incomeService;
 
-    @PostMapping
-    public ResponseEntity<Income> addIncome(@RequestBody Income income) {
-        return new ResponseEntity<>(incomeService.addIncome(income), HttpStatus.CREATED);
-    }
+	@PostMapping
+	public ResponseEntity<Income> addIncome(@RequestBody Income income) {
+		return new ResponseEntity<>(incomeService.addIncome(income), HttpStatus.CREATED);
+	}
 
-    @GetMapping("/{incomeId}")
-    public ResponseEntity<Income> getIncomeById(@PathVariable Integer incomeId) {
-        return ResponseEntity.ok(incomeService.getIncomeById(incomeId));
-    }
+	@GetMapping("/{incomeId}")
+	public ResponseEntity<Income> getIncomeById(@PathVariable Integer incomeId) {
+		return ResponseEntity.ok(incomeService.getIncomeById(incomeId));
+	}
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Income>> getIncomesByUser(@PathVariable Integer userId) {
-        return ResponseEntity.ok(incomeService.getIncomesByUser(userId));
-    }
+	@GetMapping("/user/{userId}")
+	public ResponseEntity<List<Income>> getIncomesByUser(@PathVariable Integer userId) {
+		return ResponseEntity.ok(incomeService.getIncomesByUser(userId));
+	}
 
-    @GetMapping("/user/{userId}/source")
-    public ResponseEntity<List<Income>> getIncomesBySource(
-            @PathVariable Integer userId,
-            @RequestParam IncomeSource source) {
-        return ResponseEntity.ok(incomeService.getIncomesBySource(userId, source));
-    }
+	@GetMapping("/user/{userId}/source")
+	public ResponseEntity<List<Income>> getIncomesBySource(@PathVariable Integer userId,
+			@RequestParam IncomeSource source) {
+		return ResponseEntity.ok(incomeService.getIncomesBySource(userId, source));
+	}
 
-    @GetMapping("/user/{userId}/dateRange")
-    public ResponseEntity<List<Income>> getIncomesByDateRange(
-            @PathVariable Integer userId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return ResponseEntity.ok(incomeService.getIncomesByDateRange(userId, startDate, endDate));
-    }
+	@GetMapping("/user/{userId}/dateRange")
+	public ResponseEntity<List<Income>> getIncomesByDateRange(@PathVariable Integer userId,
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+		return ResponseEntity.ok(incomeService.getIncomesByDateRange(userId, startDate, endDate));
+	}
 
-    @GetMapping("/user/{userId}/month")
-    public ResponseEntity<List<Income>> getIncomesByMonth(
-            @PathVariable Integer userId,
-            @RequestParam int year,
-            @RequestParam int month) {
-        return ResponseEntity.ok(incomeService.getIncomesByMonth(userId, year, month));
-    }
+	@GetMapping("/user/{userId}/month")
+	public ResponseEntity<List<Income>> getIncomesByMonth(@PathVariable Integer userId, @RequestParam int year,
+			@RequestParam int month) {
+		return ResponseEntity.ok(incomeService.getIncomesByMonth(userId, year, month));
+	}
 
-    @GetMapping("/user/{userId}/recurring")
-    public ResponseEntity<List<Income>> getRecurringIncomes(@PathVariable Integer userId) {
-        return ResponseEntity.ok(incomeService.getRecurringIncomes(userId));
-    }
+	@GetMapping("/user/{userId}/recurring")
+	public ResponseEntity<List<Income>> getRecurringIncomes(@PathVariable Integer userId) {
+		return ResponseEntity.ok(incomeService.getRecurringIncomes(userId));
+	}
 
-    @PutMapping("/{incomeId}")
-    public ResponseEntity<Income> updateIncome(
-            @PathVariable Integer incomeId,
-            @RequestBody Income income) {
-        return ResponseEntity.ok(incomeService.updateIncome(incomeId, income));
-    }
+	@PutMapping("/{incomeId}")
+	public ResponseEntity<Income> updateIncome(@PathVariable Integer incomeId, @RequestBody Income income) {
+		return ResponseEntity.ok(incomeService.updateIncome(incomeId, income));
+	}
 
-    @DeleteMapping("/{incomeId}")
-    public ResponseEntity<Void> deleteIncome(@PathVariable Integer incomeId) {
-        incomeService.deleteIncome(incomeId);
-        return ResponseEntity.noContent().build();
-    }
+	@DeleteMapping("/{incomeId}")
+	public ResponseEntity<Void> deleteIncome(@PathVariable Integer incomeId) {
+		incomeService.deleteIncome(incomeId);
+		return ResponseEntity.noContent().build();
+	}
 
-    @GetMapping("/user/{userId}/total")
-    public ResponseEntity<BigDecimal> getTotalIncomeByUser(@PathVariable Integer userId) {
-        return ResponseEntity.ok(incomeService.getTotalIncomeByUser(userId));
-    }
+	@GetMapping("/user/{userId}/total")
+	public ResponseEntity<BigDecimal> getTotalIncomeByUser(@PathVariable Integer userId) {
+		return ResponseEntity.ok(incomeService.getTotalIncomeByUser(userId));
+	}
 
-    @GetMapping("/user/{userId}/month/total")
-    public ResponseEntity<BigDecimal> getTotalIncomeByMonth(
-            @PathVariable Integer userId,
-            @RequestParam int year,
-            @RequestParam int month) {
-        return ResponseEntity.ok(incomeService.getTotalIncomeByMonth(userId, year, month));
-    }
+	@GetMapping("/user/{userId}/month/total")
+	public ResponseEntity<BigDecimal> getTotalIncomeByMonth(@PathVariable Integer userId, @RequestParam int year,
+			@RequestParam int month) {
+		return ResponseEntity.ok(incomeService.getTotalIncomeByMonth(userId, year, month));
+	}
+
+	// for analytics service
+	@GetMapping("/user/{userId}/year/total")
+	public ResponseEntity<BigDecimal> getTotalIncomeByYear(@PathVariable Integer userId, @RequestParam int year) {
+		return ResponseEntity.ok(incomeService.getTotalIncomeByYear(userId, year));
+	}
 }

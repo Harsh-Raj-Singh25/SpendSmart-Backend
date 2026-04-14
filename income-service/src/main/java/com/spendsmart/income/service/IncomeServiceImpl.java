@@ -2,7 +2,7 @@ package com.spendsmart.income.service;
 
 import com.spendsmart.income.entity.Income;
 import com.spendsmart.income.model.enums.IncomeSource;
-import com.spendsmart.income.repository.IncomeRepository; 
+import com.spendsmart.income.repository.IncomeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -105,4 +105,14 @@ public class IncomeServiceImpl implements IncomeService {
 	public List<Income> getRecurringIncomes(Integer userId) {
 		return incomeRepository.findByUserIdAndIsRecurringTrue(userId);
 	}
+
+	// for analytics service
+	@Override
+	@Transactional(readOnly = true)
+	public BigDecimal getTotalIncomeByYear(Integer userId, int year) {
+		LocalDate startDate = LocalDate.of(year, 1, 1);
+		LocalDate endDate = LocalDate.of(year, 12, 31);
+		BigDecimal total = incomeRepository.sumAmountByUserIdAndDateBetween(userId, startDate, endDate);
+		return total != null ? total : BigDecimal.ZERO;
+	} 
 }

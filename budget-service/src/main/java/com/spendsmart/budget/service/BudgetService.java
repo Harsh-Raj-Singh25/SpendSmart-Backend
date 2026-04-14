@@ -30,4 +30,7 @@ public interface BudgetService {
 	void resetBudgetPeriod(Integer userId);
 
 	Optional<Budget> getBudgetsByCategory(Integer userId, Integer categoryId);
+	
+	// for analytics service
+	Double getOverallBudgetAdherence(Integer userId);
 }
