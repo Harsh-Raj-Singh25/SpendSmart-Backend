@@ -36,4 +36,8 @@ public interface IncomeRepository extends JpaRepository<Income, Integer> {
             @Param("startDate") LocalDate startDate, 
             @Param("endDate") LocalDate endDate
     );
+
+    // Count incomes for a user on a specific date — used by freemium limit check.
+    // FREE users can only add 7 incomes per day.
+    long countByUserIdAndDate(Integer userId, LocalDate date);
 }

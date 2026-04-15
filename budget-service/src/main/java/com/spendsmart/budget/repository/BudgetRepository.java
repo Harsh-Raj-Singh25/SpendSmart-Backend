@@ -26,6 +26,5 @@ public interface BudgetRepository extends JpaRepository<Budget, Integer> {
 
 	int countByUserId(Integer userId);
 
-    @Query("SELECT b FROM Budget b WHERE b.budgetId = :budgetId")
     void deleteByBudgetId(Integer budgetId);
 }

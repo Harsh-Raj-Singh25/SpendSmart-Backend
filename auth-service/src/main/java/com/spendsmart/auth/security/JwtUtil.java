@@ -27,15 +27,6 @@ public class JwtUtil {
 		return Keys.hmacShaKeyFor(secret.getBytes());
 	}
 
-//	public String generateToken(String email, int userId, String role) {
-//		return Jwts.builder().setSubject(email) // standard "sub" claim — identifies the user
-//				.claim("userId", userId) // custom claim — avoids a DB lookup later
-//				.claim("role", role) // custom claim — used for access control
-//				.setIssuedAt(new Date()) // "iat" claim — when the token was issued
-//				.setExpiration(new Date(System.currentTimeMillis() + expiration)) // "exp" claim
-//				.signWith(getKey(), SignatureAlgorithm.HS256) // sign with HMAC-SHA256
-//				.compact(); // serialise to the final JWT string
-//	}
 	public String generateToken(String email, int userId, Role role) {
 		return Jwts.builder().subject(email) // subject() instead of setSubject()
 				.claim("userId", userId).claim("role", role).issuedAt(new Date()) // issuedAt() instead of setIssuedAt()
@@ -69,13 +60,6 @@ public class JwtUtil {
 
 	// Private helper — parses the token and returns all claims
 	// Throws automatically if the token is invalid or expired
-//	@SuppressWarnings("deprecation")
-//	private Claims getClaims(String token) {
-//	// return
-//	// Jwts.parserBuilder().setSigningKey(getKey()).build().parseClaimsJws(token).
-//	// getBody();
-//	 return Jwts.parser().setSigningKey(getKey()).build().parseClaimsJws(token).getBody();
-//	}
 	private Claims getClaims(String token) {
 		return Jwts.parser().setSigningKey(getKey()).build().parseSignedClaims(token).getPayload();
 	}

@@ -21,9 +21,40 @@ public class IncomeServiceImpl implements IncomeService {
 
 	private final IncomeRepository incomeRepository;
 
+	// Feign client to check user's subscription status (FREE vs PREMIUM)
+	private final com.spendsmart.income.client.AuthClient authClient;
+
+	// Maximum free transactions per day for FREE-tier users
+	private static final int FREE_DAILY_LIMIT = 7;
+
 	@Override
 	public Income addIncome(Income income) {
 		log.info("Adding new income for user: {}", income.getUserId());
+
+		// ── FREEMIUM LIMIT CHECK ────────────────────────────────────────
+		// FREE users can only add 7 incomes per day.
+		// PREMIUM users have unlimited incomes.
+		try {
+			var subscriptionStatus = authClient.getSubscriptionStatus(income.getUserId());
+			String subscriptionType = (String) subscriptionStatus.get("subscriptionType");
+
+			if ("FREE".equals(subscriptionType)) {
+				long todayCount = incomeRepository.countByUserIdAndDate(
+						income.getUserId(), java.time.LocalDate.now());
+
+				if (todayCount >= FREE_DAILY_LIMIT) {
+					throw new RuntimeException(
+							"Daily limit reached! FREE users can add up to "
+							+ FREE_DAILY_LIMIT + " incomes per day. "
+							+ "Upgrade to Premium for unlimited access.");
+				}
+			}
+		} catch (RuntimeException e) {
+			throw e;
+		} catch (Exception e) {
+			log.warn("Could not check subscription status. Allowing income: {}", e.getMessage());
+		}
+
 		return incomeRepository.save(income);
 	}
 

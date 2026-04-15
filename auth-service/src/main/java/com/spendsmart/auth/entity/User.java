@@ -1,5 +1,6 @@
 package com.spendsmart.auth.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -7,6 +8,7 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.spendsmart.auth.model.enums.Role;
+import com.spendsmart.auth.model.enums.SubscriptionType;
 
 // @Entity tells Spring Data JPA that this class maps to a database table
 // @Table(name = "users") specifies the exact table name in MySQL
@@ -33,8 +35,9 @@ public class User {
 	@Column(nullable = false, unique = true)
 	private String email;
 
-	// We never store raw passwords — only the BCrypt hash goes here
-	@Column(nullable = false)
+	// We never store raw passwords — only the BCrypt hash goes here.
+	// Nullable because Google OAuth users don't have a password.
+	@JsonIgnore
 	private String passwordHash;
 
 	// @Builder.Default sets the default value when using the builder pattern
@@ -58,9 +61,10 @@ public class User {
 	@Builder.Default
 	private boolean isActive = true;
 
-	// Auto-set at object creation time — we don't expect the caller to pass this
-	@Builder.Default
-	private LocalDateTime createdAt = LocalDateTime.now();
+	// Auto-set at DB insert time — Hibernate manages this automatically
+	@CreationTimestamp
+	@Column(updatable = false)
+	private LocalDateTime createdAt;
 
 	// Used by Analytics-Service to compute the Financial Health Score
 	private double monthlyBudget;
@@ -70,4 +74,16 @@ public class User {
 	@Enumerated(EnumType.STRING)
 	@Builder.Default
 	private Role role = Role.USER;
+
+	// ── Subscription / Freemium Fields ───────────────────────────────────
+	// FREE = 7 transactions/day, PREMIUM = unlimited
+	// After Razorpay payment, subscriptionType is set to PREMIUM
+	// and premiumExpiresAt is set to 30 days from the payment date.
+	@Enumerated(EnumType.STRING)
+	@Builder.Default
+	private SubscriptionType subscriptionType = SubscriptionType.FREE;
+
+	// null for FREE users; set to payment_date + 30 days for PREMIUM users.
+	// When this date passes, the user should be treated as FREE again.
+	private LocalDateTime premiumExpiresAt;
 }

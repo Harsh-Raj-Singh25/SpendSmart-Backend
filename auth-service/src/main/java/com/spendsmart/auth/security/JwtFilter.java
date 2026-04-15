@@ -41,7 +41,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 // principal = email (who they are), credentials = null (we don't need the password again)
                 var auth = new UsernamePasswordAuthenticationToken(
                         email, null,
-                        List.of(new SimpleGrantedAuthority("ROLE"+role))
+                        List.of(new SimpleGrantedAuthority("ROLE_"+role))
                 );
 
                 // Store userId in the details field so controllers can retrieve it

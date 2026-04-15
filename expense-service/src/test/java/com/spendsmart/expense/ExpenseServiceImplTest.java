@@ -1,5 +1,7 @@
 package com.spendsmart.expense;
 
+import com.spendsmart.expense.client.AuthClient;
+import com.spendsmart.expense.client.BudgetServiceClient;
 import com.spendsmart.expense.entity.Expense;
 import com.spendsmart.expense.model.enums.ExpenseType;
 import com.spendsmart.expense.model.enums.PaymentMethod;
@@ -14,7 +16,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
+import java.util.HashMap; 
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,6 +30,12 @@ class ExpenseServiceImplTest {
     @Mock
     private ExpenseRepository expenseRepository;
 
+    @Mock
+    private AuthClient authClient;
+
+    @Mock
+    private BudgetServiceClient budgetServiceClient;
+
     @InjectMocks
     private ExpenseServiceImpl expenseService;
 
@@ -37,7 +46,7 @@ class ExpenseServiceImplTest {
         mockExpense = Expense.builder()
                 .expenseId(1L)
                 .userId(1)
-                .categoryId(101L)
+                .categoryId(101)
                 .title("Groceries")
                 .amount(new BigDecimal("1500.00"))
                 .currency("INR")
@@ -51,6 +60,14 @@ class ExpenseServiceImplTest {
     @Test
     void addExpense_Success() {
         // Arrange
+        // Mock subscription status check
+        Map<String, Object> subscriptionStatus = new HashMap<>();
+        subscriptionStatus.put("subscriptionType", "FREE");
+        when(authClient.getSubscriptionStatus(1)).thenReturn(subscriptionStatus);
+
+        // Mock daily count: User has 0 expenses today (limit is 7)
+        when(expenseRepository.countByUserIdAndDate(eq(1), any(LocalDate.class))).thenReturn(0L);
+
         when(expenseRepository.save(any(Expense.class))).thenReturn(mockExpense);
 
         // Act
@@ -61,6 +78,45 @@ class ExpenseServiceImplTest {
         assertEquals(1L, savedExpense.getExpenseId());
         assertEquals(new BigDecimal("1500.00"), savedExpense.getAmount());
         verify(expenseRepository, times(1)).save(any(Expense.class));
+        verify(budgetServiceClient, times(1)).updateSpentAmountByCategory(anyInt(), anyInt(), any(BigDecimal.class));
+    }
+
+    @Test
+    void addExpense_DailyLimitReached_ThrowsException() {
+        // Arrange
+        Map<String, Object> subscriptionStatus = new HashMap<>();
+        subscriptionStatus.put("subscriptionType", "FREE");
+        when(authClient.getSubscriptionStatus(1)).thenReturn(subscriptionStatus);
+
+        // Mock daily count: User already has 7 expenses today
+        when(expenseRepository.countByUserIdAndDate(eq(1), any(LocalDate.class))).thenReturn(7L);
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            expenseService.addExpense(mockExpense);
+        });
+
+        assertTrue(exception.getMessage().contains("Daily limit reached"));
+        verify(expenseRepository, never()).save(any(Expense.class));
+    }
+
+    @Test
+    void addExpense_PremiumUser_SuccessRegardlessOfCount() {
+        // Arrange
+        Map<String, Object> subscriptionStatus = new HashMap<>();
+        subscriptionStatus.put("subscriptionType", "PREMIUM");
+        when(authClient.getSubscriptionStatus(1)).thenReturn(subscriptionStatus);
+
+        when(expenseRepository.save(any(Expense.class))).thenReturn(mockExpense);
+
+        // Act
+        Expense savedExpense = expenseService.addExpense(mockExpense);
+
+        // Assert
+        assertNotNull(savedExpense);
+        verify(expenseRepository, times(1)).save(any(Expense.class));
+        // Verify countByUserIdAndDate was NEVER called for PREMIUM users
+        verify(expenseRepository, never()).countByUserIdAndDate(anyInt(), any(LocalDate.class));
     }
 
     @Test

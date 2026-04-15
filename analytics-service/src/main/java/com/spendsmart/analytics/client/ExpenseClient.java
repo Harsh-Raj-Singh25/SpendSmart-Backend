@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-@FeignClient(name = "expense-service", url = "http://localhost:8082")
+@FeignClient(name = "expense-service")
 public interface ExpenseClient {
 	@GetMapping("/expenses/user/{userId}/month/total")
 	BigDecimal getTotalExpenseByMonth(@PathVariable("userId") Integer userId, @RequestParam("year") int year,
@@ -28,6 +28,6 @@ public interface ExpenseClient {
 	Map<Integer, BigDecimal> getDailyExpenseTrend(@PathVariable("userId") Integer userId,
 			@RequestParam("year") int year, @RequestParam("month") int month);
 
-	@GetMapping("/user/{userId}")
+	@GetMapping("/expenses/user/{userId}")
 	List<ExpenseDto> getUserExpenses(@PathVariable("userId") int userId);
 }

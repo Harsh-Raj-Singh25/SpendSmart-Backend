@@ -20,7 +20,13 @@ spring:
 jwt:
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
   expiration: 86400000
-  
+
+# Google OAuth2 Client ID — replace with your actual Google Console client ID.
+# To get one: https://console.cloud.google.com → APIs & Services → Credentials
+# Create an "OAuth 2.0 Client ID" of type "Web application"
+google:
+  client-id: PLACEHOLDER_GOOGLE_CLIENT_ID
+
 eureka:
     client:
       service-url:

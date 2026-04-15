@@ -66,4 +66,33 @@ public class NotifResource {
 		notifService.sendBulk(recipientIds, title, message);
 		return ResponseEntity.ok().build();
 	}
+
+	// Endpoint for inter-service calls (e.g., recurring-transaction-service sends reminders)
+	@PostMapping("/send")
+	public ResponseEntity<Void> sendNotification(@RequestBody com.spendsmart.notification.model.dto.NotificationRequest request) {
+		Notification notification = Notification.builder()
+				.recipientId(request.getUserId())
+				.type(request.getType() != null ? request.getType() : "SYSTEM")
+				.severity("INFO")
+				.title(request.getTitle())
+				.message(request.getMessage())
+				.isRead(false)
+				.isAcknowledged(false)
+				.build();
+		notifService.send(notification);
+		return ResponseEntity.ok().build();
+	}
+
+	// ── EMAIL DISPATCH ENDPOINT ─────────────────────────────────────────
+	// Called by auth-service (via Feign) to send OTP emails for password reset.
+	// This endpoint directly dispatches an email without creating an in-app notification.
+	// The SMTP config (Gmail) is in this service's application.yml.
+	@PostMapping("/email")
+	public ResponseEntity<Void> sendEmail(
+			@RequestParam String to,
+			@RequestParam String subject,
+			@RequestParam String body) {
+		notifService.sendDirectEmail(to, subject, body);
+		return ResponseEntity.ok().build();
+	}
 }

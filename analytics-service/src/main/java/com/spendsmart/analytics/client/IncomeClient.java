@@ -10,7 +10,7 @@ import com.spendsmart.analytics.model.dto.IncomeDto;
 import java.math.BigDecimal;
 import java.util.List;
 
-@FeignClient(name = "income-service", url = "http://localhost:8083")
+@FeignClient(name = "income-service")
 public interface IncomeClient {
 	@GetMapping("/incomes/user/{userId}/month/total")
 	BigDecimal getTotalIncomeByMonth(@PathVariable("userId") Integer userId, @RequestParam("year") int year,
@@ -19,6 +19,6 @@ public interface IncomeClient {
 	@GetMapping("/incomes/user/{userId}/year/total")
 	BigDecimal getTotalIncomeByYear(@PathVariable("userId") Integer userId, @RequestParam("year") int year);
 
-	@GetMapping("/user/{userId}")
+	@GetMapping("/incomes/user/{userId}")
 	List<IncomeDto> getUserIncomes(@PathVariable("userId") int userId);
 }

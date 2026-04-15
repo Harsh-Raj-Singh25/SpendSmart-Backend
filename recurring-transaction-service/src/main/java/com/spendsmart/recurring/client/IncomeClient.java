@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.spendsmart.recurring.model.dto.TransactionRequest;
 
-@FeignClient(name = "income-service", url = "http://localhost:8083")
+@FeignClient(name = "income-service")
 public interface IncomeClient {
 	@PostMapping("/incomes")
 	void addIncome(@RequestBody TransactionRequest request);

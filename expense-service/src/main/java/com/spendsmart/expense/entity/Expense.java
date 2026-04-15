@@ -36,7 +36,7 @@ public class Expense {
 	
 	// this will link with category service
 	@Column(nullable=false)
-	private Long categoryId;
+	private Integer categoryId;
 	
 	@Column(nullable= false)
 	private String title;

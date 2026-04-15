@@ -11,11 +11,18 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>auth-service</module>
+        <module>discovery-server</module>
         <module>api-gateway</module>
+        <module>auth-service</module>
         <module>expense-service</module>
         <module>income-service</module>
         <module>category-service</module>
+        <module>budget-service</module>
+        <module>analytics-service</module>
+        <module>notification-service</module>
+        <module>recurring-transaction-service</module>
+        <module>website-mvc-app</module>
+        <module>payment-service</module>
     </modules>
 
     <parent>

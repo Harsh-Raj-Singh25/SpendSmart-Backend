@@ -115,6 +115,15 @@ public class NotifServiceImpl implements NotifService {
 		notificationRepository.deleteByNotificationId(notificationId);
 	}
 
+	// ── PUBLIC EMAIL DISPATCH ───────────────────────────────────────────
+	// Called by auth-service (via Feign) for sending OTP password reset emails.
+	// This is a direct email send without creating an in-app notification.
+	@Override
+	public void sendDirectEmail(String to, String subject, String body) {
+		log.info("Sending direct email to: {}", to);
+		sendEmail(to, subject, body);
+	}
+
 	// --- The Actual Email Dispatch Method ---
 	private void sendEmail(String to, String subject, String text) {
 		try {

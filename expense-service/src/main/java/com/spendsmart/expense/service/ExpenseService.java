@@ -15,7 +15,7 @@ public interface ExpenseService {
 
 	List<Expense> getExpensesByUser(Integer userId);
 
-	List<Expense> getExpensesByCategory(Long categoryId);
+	List<Expense> getExpensesByCategory(Integer categoryId);
 
 	List<Expense> getExpensesByDateRange(Integer userId, LocalDate start, LocalDate end);
 
@@ -31,7 +31,7 @@ public interface ExpenseService {
 
 	BigDecimal getTotalByUser(Integer userId);
 
-	BigDecimal getTotalByCategory(Long categoryId);
+	BigDecimal getTotalByCategory(Integer categoryId);
 
 	// For analytics service
 	BigDecimal getTotalExpenseByYear(Integer userId, int year);

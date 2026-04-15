@@ -46,7 +46,7 @@ public class ExpenseResource {
 	}
 
 	@GetMapping("/category/{categoryId}")
-	public ResponseEntity<List<Expense>> getExpensesByCategory(@PathVariable Long categoryId) {
+	public ResponseEntity<List<Expense>> getExpensesByCategory(@PathVariable Integer categoryId) {
 		return ResponseEntity.ok(expenseService.getExpensesByCategory(categoryId));
 	}
 
@@ -85,7 +85,7 @@ public class ExpenseResource {
 	}
 
 	@GetMapping("/category/{categoryId}/total")
-	public ResponseEntity<BigDecimal> getTotalByCategory(@PathVariable Long categoryId) {
+	public ResponseEntity<BigDecimal> getTotalByCategory(@PathVariable Integer categoryId) {
 		return ResponseEntity.ok(expenseService.getTotalByCategory(categoryId));
 	}
 

@@ -3,15 +3,21 @@ package com.spendsmart.income;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import com.spendsmart.income.client.AuthClient;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +36,9 @@ public class IncomeServiceImplTest {
 	
 	@Mock
 	private IncomeRepository incomeRepository;
+
+	@Mock
+	private AuthClient authClient;
 	
 	@InjectMocks
 	private IncomeServiceImpl incomeService;
@@ -53,9 +62,17 @@ public class IncomeServiceImplTest {
 	}
 	
 	@Test
-	void addIncome() {
+	void addIncome_Success() {
 		// Arrange
+		Map<String, Object> subscriptionStatus = new HashMap<>();
+		subscriptionStatus.put("subscriptionType", "FREE");
+		when(authClient.getSubscriptionStatus(1)).thenReturn(subscriptionStatus);
+
+		// Mock daily count: User has 0 incomes today (limit is 7)
+		when(incomeRepository.countByUserIdAndDate(eq(1), any(LocalDate.class))).thenReturn(0L);
+
 		when(incomeRepository.save(any(Income.class))).thenReturn(mockIncome);
+
 		//Act
 		Income savedIncome=incomeService.addIncome(mockIncome);
 		
@@ -65,6 +82,44 @@ public class IncomeServiceImplTest {
 		assertEquals(new BigDecimal("40000"),savedIncome.getAmount());
 		assertEquals(IncomeSource.SALARY, savedIncome.getSource());
 		verify(incomeRepository, times(1)).save(any(Income.class));
+	}
+
+	@Test
+	void addIncome_DailyLimitReached_ThrowsException() {
+		// Arrange
+		Map<String, Object> subscriptionStatus = new HashMap<>();
+		subscriptionStatus.put("subscriptionType", "FREE");
+		when(authClient.getSubscriptionStatus(1)).thenReturn(subscriptionStatus);
+
+		// Mock daily count: User already has 7 incomes today
+		when(incomeRepository.countByUserIdAndDate(eq(1), any(LocalDate.class))).thenReturn(7L);
+
+		// Act & Assert
+		RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+			incomeService.addIncome(mockIncome);
+		});
+
+		assertTrue(exception.getMessage().contains("Daily limit reached"));
+		verify(incomeRepository, never()).save(any(Income.class));
+	}
+
+	@Test
+	void addIncome_PremiumUser_SuccessRegardlessOfCount() {
+		// Arrange
+		Map<String, Object> subscriptionStatus = new HashMap<>();
+		subscriptionStatus.put("subscriptionType", "PREMIUM");
+		when(authClient.getSubscriptionStatus(1)).thenReturn(subscriptionStatus);
+
+		when(incomeRepository.save(any(Income.class))).thenReturn(mockIncome);
+
+		// Act
+		Income savedIncome = incomeService.addIncome(mockIncome);
+
+		// Assert
+		assertNotNull(savedIncome);
+		verify(incomeRepository, times(1)).save(any(Income.class));
+		// Verify countByUserIdAndDate was NEVER called for PREMIUM users
+		verify(incomeRepository, never()).countByUserIdAndDate(anyInt(), any(LocalDate.class));
 	}
 	
 	@Test

@@ -1,11 +1,10 @@
 package com.spendsmart.auth.service;
 
-import com.spendsmart.auth.dto.AuthResponse;
-import com.spendsmart.auth.dto.ChangePasswordRequest;
-import com.spendsmart.auth.dto.LoginRequest;
-import com.spendsmart.auth.dto.RegisterRequest;
-import com.spendsmart.auth.dto.UpdateProfileRequest;
+import com.spendsmart.auth.dto.*;
 import com.spendsmart.auth.entity.User;
+
+import java.util.List;
+import java.util.Map;
 
 // Service interface defines the contract — what operations are available
 // The actual business logic lives in AuthServiceImpl
@@ -47,4 +46,43 @@ public interface AuthService {
 
 	// Soft delete — sets isActive = false, preserving all historical data
 	void deactivateAccount(int userId);
+
+	// ── Admin Methods ──────────────────────────────────────────────────
+	// These are used exclusively by AdminResource (protected by ADMIN role)
+
+	// Returns ALL users in the system (active + inactive)
+	List<User> getAllUsers();
+
+	// Returns only users with isActive = true
+	List<User> getActiveUsers();
+
+	// Returns { "total": <count>, "active": <count> } for admin KPIs
+	Map<String, Long> getUserCount();
+
+	// Soft-deletes a user (sets isActive = false) — admin version of deactivateAccount
+	void suspendUser(int userId);
+
+	// Reverses a suspension — sets isActive = true
+	void reactivateUser(int userId);
+
+	// HARD deletes the user record from the database — irreversible
+	void deleteUser(int userId);
+
+	// ── Google OAuth ───────────────────────────────────────────────────
+	// Verifies a Google ID token and returns JWT (find-or-create user)
+	AuthResponse googleLogin(GoogleAuthRequest request);
+
+	// ── Forgot Password ────────────────────────────────────────────────
+	// Generates a 6-digit OTP email for password reset
+	void forgotPassword(ForgotPasswordRequest request);
+
+	// Verifies OTP and resets password
+	void resetPassword(ResetPasswordRequest request);
+
+	// ── Subscription ───────────────────────────────────────────────────
+	// Upgrades user to PREMIUM after successful payment
+	void upgradeToPremium(int userId);
+
+	// Returns user's current subscription status (FREE or PREMIUM)
+	Map<String, Object> getSubscriptionStatus(int userId);
 }

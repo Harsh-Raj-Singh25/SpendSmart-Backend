@@ -80,6 +80,10 @@ public class BudgetServiceImpl implements BudgetService {
 
 		// Add the new expense amount to the existing spent amount
 		BigDecimal newTotal = budget.getSpentAmount().add(expenseAmount);
+		// Guard against negative values (can happen if budget service was down during add)
+		if (newTotal.compareTo(BigDecimal.ZERO) < 0) {
+			newTotal = BigDecimal.ZERO;
+		}
 		budget.setSpentAmount(newTotal);
 		budgetRepository.save(budget);
 

@@ -243,10 +243,25 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     }
     @Override
     public Map<String, Object> calculate6MonthCashflow(int userId, int currentMonth, int currentYear) {
+        List<String> months = new ArrayList<>();
+        List<BigDecimal> incomes = new ArrayList<>();
+        List<BigDecimal> expenses = new ArrayList<>();
+
+        // Go back 5 months from the current month (6 total including current)
+        for (int i = 5; i >= 0; i--) {
+            LocalDate date = LocalDate.of(currentYear, currentMonth, 1).minusMonths(i);
+            int year = date.getYear();
+            int month = date.getMonthValue();
+
+            months.add(date.getMonth().name().substring(0, 3)); // "JAN", "FEB", etc.
+            incomes.add(getOrDefault(incomeClient.getTotalIncomeByMonth(userId, year, month)));
+            expenses.add(getOrDefault(expenseClient.getTotalExpenseByMonth(userId, year, month)));
+        }
+
         Map<String, Object> chartData = new HashMap<>();
-        chartData.put("months", Arrays.asList("Nov", "Dec", "Jan", "Feb", "Mar", "Apr"));
-        chartData.put("incomes", Arrays.asList(50000, 50000, 52000, 50000, 50000, 55000));
-        chartData.put("expenses", Arrays.asList(30000, 45000, 32000, 31000, 28000, 35000));
+        chartData.put("months", months);
+        chartData.put("incomes", incomes);
+        chartData.put("expenses", expenses);
         return chartData;
     }
     @Override

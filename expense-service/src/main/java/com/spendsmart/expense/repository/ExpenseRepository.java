@@ -20,7 +20,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
 	List<Expense> findByUserIdAndType(Integer userId, ExpenseType type);
 
-	List<Expense> findByCategoryId(Long categoryId);
+	List<Expense> findByCategoryId(Integer categoryId);
 
 	List<Expense> findByUserIdAndDate(Integer userId, LocalDate date);
 
@@ -40,7 +40,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 	BigDecimal sumAmountByUserId(@Param("userId") Integer userId);
 
 	@Query("SELECT SUM(e.amount) FROM Expense e WHERE e.categoryId = :categoryId")
-	BigDecimal sumAmountByCategoryId(@Param("categoryId") Long categoryId);
+	BigDecimal sumAmountByCategoryId(@Param("categoryId") Integer categoryId);
 
 	// Custom query for the keyword search across title and notes
 	@Query("SELECT e FROM Expense e WHERE e.userId = :userId AND (LOWER(e.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.notes) LIKE LOWER(CONCAT('%', :keyword, '%')))")
@@ -50,4 +50,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 	@Query("SELECT SUM(e.amount) FROM Expense e WHERE e.userId = :userId AND e.date BETWEEN :startDate AND :endDate")
 	BigDecimal sumAmountByUserIdAndDateBetween(@Param("userId") Integer userId, @Param("startDate") LocalDate startDate,
 			@Param("endDate") LocalDate endDate);
+
+	// Count expenses for a user on a specific date — used by freemium limit check.
+	// FREE users can only add 7 expenses per day.
+	long countByUserIdAndDate(Integer userId, LocalDate date);
 }

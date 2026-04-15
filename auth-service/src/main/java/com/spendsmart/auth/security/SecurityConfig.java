@@ -4,45 +4,66 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsPasswordService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+// ============================================================================
+// SECURITY CONFIGURATION — Defines which endpoints are public vs protected.
+//
+// HOW IT WORKS:
+// 1. CSRF is disabled because we use stateless JWT (no cookies/sessions)
+// 2. Session management is STATELESS — every request must carry its own JWT
+// 3. permitAll() endpoints don't require a JWT — they're public
+// 4. hasRole("ADMIN") endpoints require a JWT with role=ADMIN
+// 5. authenticated() = everything else requires any valid JWT
+// 6. JwtFilter runs BEFORE Spring's default filter to parse our JWT
+// ============================================================================
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
 	private final JwtFilter jwtFilter;
 	private final CustomUserDetailsService userDetailsService;
-	
+
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
 				// Disable CSRF — not needed for stateless REST APIs
-				// CSRF protection is only relevant for session-based (cookie) auth
 				.csrf(csrf -> csrf.disable())
 
 				// STATELESS means Spring never creates or uses an HTTP session
-				// Every request must carry its own JWT — no "remember me" session
 				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
 				.authorizeHttpRequests(auth -> auth
-						// These three endpoints must be public — user isn't logged in yet
-						.requestMatchers("/auth/register", "/auth/login", "/auth/refresh").permitAll()
+						// ── PUBLIC ENDPOINTS — no JWT required ──────────────
+						// Registration, login, Google OAuth, and password reset
+						// must be accessible without authentication
+						.requestMatchers(
+								"/auth/register",
+								"/auth/login",
+								"/auth/google",
+								"/auth/forgot-password",
+								"/auth/reset-password"
+						).permitAll()
+
+						// ── ADMIN-ONLY ENDPOINTS ────────────────────────────
+						// Only users with role=ADMIN in their JWT can access
 						.requestMatchers("/auth/admin/**").hasRole("ADMIN")
-						// Every other endpoint requires a valid JWT in the Authorization header
+
+						// ── SUBSCRIPTION ENDPOINTS — accessible by other services ─
+						// payment-service calls these to upgrade users after payment
+						// expense/income services call to check subscription status
+						.requestMatchers("/auth/subscription/**").permitAll()
+
+						// ── EVERYTHING ELSE — requires valid JWT ────────────
 						.anyRequest().authenticated())
 
-				// Register our JwtFilter to run BEFORE Spring's default username/password
-				// filter
-				// This way Spring Security sees our authentication before trying its own
+				// Register our JwtFilter to run BEFORE Spring's default filter
 				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
@@ -51,24 +72,11 @@ public class SecurityConfig {
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		// BCrypt is a one-way hashing algorithm with a built-in salt
-		// The same password hashed twice produces different hashes — prevents rainbow
-		// table attacks
-		// Default strength factor is 10 (2^10 = 1024 hashing rounds) — secure and fast
-		// enough
 		return new BCryptPasswordEncoder();
 	}
-	 
-//	@Bean
-//    public AuthenticationProvider authenticationProvider() {
-//        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-//        authProvider.setUserDetailsService(userDetailsService);
-//        authProvider.setPasswordEncoder(passwordEncoder());
-//        return authProvider;
-//    }
-//	
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
+	@Bean
+	public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+		return config.getAuthenticationManager();
+	}
 }

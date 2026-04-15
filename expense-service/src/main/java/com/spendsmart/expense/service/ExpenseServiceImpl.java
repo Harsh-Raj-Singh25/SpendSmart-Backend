@@ -23,25 +23,54 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Transactional
 public class ExpenseServiceImpl implements ExpenseService {
-	private final ExpenseRepository expenseRepository; //
-	private final BudgetServiceClient budgetServiceClient; // <-- Inject the Client
+	private final ExpenseRepository expenseRepository;
+	private final BudgetServiceClient budgetServiceClient;
+
+	// Feign client to check user's subscription status (FREE vs PREMIUM)
+	private final com.spendsmart.expense.client.AuthClient authClient;
+
+	// Maximum number of free transactions per day for FREE-tier users
+	private static final int FREE_DAILY_LIMIT = 7;
 
 	@Override
 	public Expense addExpense(Expense expense) {
 		log.info("Adding new expense for user: {}", expense.getUserId());
+
+		// ── FREEMIUM LIMIT CHECK ────────────────────────────────────────
+		// Before saving, check if the user is on the FREE tier.
+		// FREE users can only add 7 expenses per day.
+		// PREMIUM users have unlimited expenses.
+		try {
+			var subscriptionStatus = authClient.getSubscriptionStatus(expense.getUserId());
+			String subscriptionType = (String) subscriptionStatus.get("subscriptionType");
+
+			if ("FREE".equals(subscriptionType)) {
+				// Count how many expenses this user already has today
+				long todayCount = expenseRepository.countByUserIdAndDate(
+						expense.getUserId(), LocalDate.now());
+
+				if (todayCount >= FREE_DAILY_LIMIT) {
+					throw new RuntimeException(
+							"Daily limit reached! FREE users can add up to "
+							+ FREE_DAILY_LIMIT + " expenses per day. "
+							+ "Upgrade to Premium for unlimited access.");
+				}
+			}
+		} catch (RuntimeException e) {
+			throw e; // Re-throw our limit exceeded exception
+		} catch (Exception e) {
+			// If auth-service is down, allow the expense (graceful degradation)
+			log.warn("Could not check subscription status. Allowing expense: {}", e.getMessage());
+		}
+
 		Expense savedExpense = expenseRepository.save(expense);
-		// TODO: As per document , trigger Budget-Service to increment spentAmount
-		// This will be implemented later via Kafka or OpenFeign
-		// implementation
-		// 2. Call the Budget Service synchronously!
+		// Sync with Budget Service
 		try {
 			budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), savedExpense.getCategoryId(),
 					savedExpense.getAmount());
 			log.info("Successfully updated budget for category: {}", savedExpense.getCategoryId());
 		} catch (Exception e) {
 			log.error("Failed to update budget. Budget Service might be down: {}", e.getMessage());
-			// We catch the error so the Expense still saves even if the Budget service is
-			// temporarily offline
 		}
 		return savedExpense;
 	}
@@ -64,7 +93,7 @@ public class ExpenseServiceImpl implements ExpenseService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<Expense> getExpensesByCategory(Long categoryId) {
+	public List<Expense> getExpensesByCategory(Integer categoryId) {
 		// TODO Auto-generated method stub
 		return expenseRepository.findByCategoryId(categoryId);
 	}
@@ -107,7 +136,7 @@ public class ExpenseServiceImpl implements ExpenseService {
 
 		// Store the old values BEFORE we change them so we can do math later
 		BigDecimal oldAmount = existingExpense.getAmount();
-		Long oldCategoryId = existingExpense.getCategoryId();
+		Integer oldCategoryId = existingExpense.getCategoryId();
 
 		existingExpense.setCategoryId(expenseDetails.getCategoryId());
 		existingExpense.setTitle(expenseDetails.getTitle());
@@ -118,7 +147,6 @@ public class ExpenseServiceImpl implements ExpenseService {
 		existingExpense.setDate(expenseDetails.getDate());
 		existingExpense.setNotes(expenseDetails.getNotes());
 		existingExpense.setReceiptUrl(expenseDetails.getReceiptUrl());
-//        existingExpense.setRecurring(expenseDetails.isRecurring()); -> if the primitive boolean is used
 		existingExpense.setIsRecurring(expenseDetails.getIsRecurring());
 
 		Expense savedExpense = expenseRepository.save(existingExpense);
@@ -177,7 +205,7 @@ public class ExpenseServiceImpl implements ExpenseService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public BigDecimal getTotalByCategory(Long categoryId) {
+	public BigDecimal getTotalByCategory(Integer categoryId) {
 		// TODO Auto-generated method stub
 		BigDecimal total = expenseRepository.sumAmountByCategoryId(categoryId);
 		return total != null ? total : BigDecimal.ZERO;

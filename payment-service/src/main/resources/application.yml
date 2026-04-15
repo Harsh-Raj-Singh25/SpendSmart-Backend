@@ -1,0 +1,36 @@
+server:
+  port: 8089
+
+spring:
+  application:
+    name: payment-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/spendsmart_payment?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
+    username: root
+    password: Harsh@SQL12
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# Razorpay API Credentials — replace with your actual keys from https://dashboard.razorpay.com
+# Test Mode keys start with "rzp_test_" and "test_secret_"
+# NEVER commit production keys to version control!
+razorpay:
+  key-id: rzp_test_PLACEHOLDER_KEY_ID
+  key-secret: PLACEHOLDER_KEY_SECRET
+
+# Subscription pricing — amount in paise (100 paise = 1 INR)
+# 100 INR = 10000 paise
+subscription:
+  amount: 10000
+  currency: INR
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

@@ -21,4 +21,8 @@ public interface NotifService {
 	int getUnreadCount(int recipientId);
 
 	void deleteNotification(int notificationId);
+
+	// Sends a raw email without creating an in-app notification.
+	// Used by auth-service for OTP password reset emails.
+	void sendDirectEmail(String to, String subject, String body);
 }
