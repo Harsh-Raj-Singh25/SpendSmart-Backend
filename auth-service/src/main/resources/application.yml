@@ -1,13 +1,13 @@
 server:
-  port: 8082
+  port: 8081
 
 spring:
   application:
-    name: expense-service
+    name: auth-service
   datasource:
-    url: jdbc:mysql://localhost:3306/spendsmart_expense?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true
+    url: jdbc:mysql://localhost:3306/spendsmart_auth
     username: root
-    password: Harsh@SQL12 # Update this!
+    password: Harsh@SQL12
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -17,6 +17,10 @@ spring:
       hibernate:
         format_sql: true
 
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  expiration: 86400000
+  
 eureka:
     client:
       service-url:
