@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/base :: head('Analytics - SpendSmart')}"></head>
+
+<body class="bg-light">
+
+	<div th:replace="~{fragments/base :: navbar}"></div>
+
+	<div class="container">
+		<h2 class="mb-4">Financial Analytics</h2>
+
+		<div class="row">
+			<div class="col-md-6 mb-4">
+				<div class="card h-100">
+					<div class="card-header bg-white">Spending by Category</div>
+					<div class="card-body">
+						<canvas id="categoryPieChart"></canvas>
+					</div>
+				</div>
+			</div>
+
+			<div class="col-md-6 mb-4">
+				<div class="card h-100">
+					<div class="card-header bg-white">6-Month Cashflow Trend</div>
+					<div class="card-body">
+						<canvas id="cashflowBarChart"></canvas>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div th:replace="~{fragments/base :: scripts}"></div>
+
+	<script>
+		document.addEventListener("DOMContentLoaded", function () {
+
+			// 1. Fetch data for the Pie Chart
+			// Note: Hardcoding month/year for testing. In reality, you'd pass these from a dropdown.
+			fetch('/app/analytics/api/category-pie?month=4&year=2026')
+				.then(response => response.json())
+				.then(data => {
+					const ctx = document.getElementById('categoryPieChart').getContext('2d');
+					new Chart(ctx, {
+						type: 'doughnut',
+						data: {
+							labels: Object.keys(data), // e.g., ["Rent", "Food", "Transport"]
+							datasets: [{
+								data: Object.values(data), // e.g., [15000, 5000, 2000]
+								backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+							}]
+						},
+						options: {responsive: true, maintainAspectRatio: false}
+					});
+				})
+				.catch(error => console.error("Error loading pie chart data", error));
+
+			// 2. Fetch data for the Bar Chart
+			fetch('/app/analytics/api/cashflow?month=4&year=2026')
+				.then(response => response.json())
+				.then(data => {
+					const ctx = document.getElementById('cashflowBarChart').getContext('2d');
+					new Chart(ctx, {
+						type: 'bar',
+						data: {
+							labels: data.months, // e.g., ["Nov", "Dec", "Jan", "Feb", "Mar", "Apr"]
+							datasets: [
+								{
+									label: 'Income',
+									data: data.incomes,
+									backgroundColor: '#28a745' // Bootstrap Success Green
+								},
+								{
+									label: 'Expenses',
+									data: data.expenses,
+									backgroundColor: '#dc3545' // Bootstrap Danger Red
+								}
+							]
+						},
+						options: {responsive: true, maintainAspectRatio: false}
+					});
+				})
+				.catch(error => console.error("Error loading bar chart data", error));
+		});
+	</script>
+</body>
+
+</html>

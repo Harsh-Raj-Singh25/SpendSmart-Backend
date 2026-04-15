@@ -4,7 +4,11 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import com.spendsmart.analytics.model.dto.IncomeDto;
+
 import java.math.BigDecimal;
+import java.util.List;
 
 @FeignClient(name = "income-service", url = "http://localhost:8083")
 public interface IncomeClient {
@@ -14,4 +18,7 @@ public interface IncomeClient {
 
 	@GetMapping("/incomes/user/{userId}/year/total")
 	BigDecimal getTotalIncomeByYear(@PathVariable("userId") Integer userId, @RequestParam("year") int year);
+
+	@GetMapping("/user/{userId}")
+	List<IncomeDto> getUserIncomes(@PathVariable("userId") int userId);
 }

@@ -2,9 +2,12 @@ package com.spendsmart.analytics.resource;
 
 import com.spendsmart.analytics.entity.FinancialSnapshot;
 import com.spendsmart.analytics.model.dto.MonthlySummary;
+import com.spendsmart.analytics.model.dto.SnapshotDto;
 import com.spendsmart.analytics.model.dto.YearlySummary;
 import com.spendsmart.analytics.service.AnalyticsService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +18,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/analytics")
 @RequiredArgsConstructor
+@Slf4j
 public class AnalyticsResource {
 
 	private final AnalyticsService analyticsService;
@@ -79,5 +83,33 @@ public class AnalyticsResource {
 	@GetMapping("/user/{userId}/cashflow")
 	public ResponseEntity<Map<String, BigDecimal>> getCashflow(@PathVariable Integer userId, @RequestParam int month) {
 		return ResponseEntity.ok(analyticsService.getCashflowData(userId, month));
+	}
+
+	// for web mvc layer
+	@GetMapping("/snapshot/user/{userId}/month/{month}/year/{year}")
+	public ResponseEntity<SnapshotDto> getMonthlySnapshot(@PathVariable int userId, @PathVariable int month,
+			@PathVariable int year) {
+		log.info("Generating Monthly Snapshot for User: {} | Date: {}/{}", userId, month, year);
+		return (ResponseEntity<SnapshotDto>) ResponseEntity.ok(analyticsService.getMonthlySnapshotDto(userId, month, year));
+	}
+
+	@GetMapping("/charts/category-pie")
+	public ResponseEntity<Map<String, Double>> getCategoryPieChart(@RequestParam int userId, @RequestParam int month,
+			@RequestParam int year) {
+		log.info("Generating Category Pie Chart Data for User: {}", userId);
+		return ResponseEntity.ok(analyticsService.calculateCategorySpending(userId, month, year));
+	}
+
+	@GetMapping("/charts/cashflow")
+	public ResponseEntity<Map<String, Object>> getCashflowData(@RequestParam int userId, @RequestParam int month,
+			@RequestParam int year) {
+		log.info("Generating 6-Month Cashflow Data for User: {}", userId);
+		return ResponseEntity.ok(analyticsService.calculate6MonthCashflow(userId, month, year));
+	}
+
+	@GetMapping("/health-score")
+	public ResponseEntity<Integer> getFinancialHealthScore(@RequestParam int userId, @RequestParam int month) {
+		log.info("Calculating Financial Health Score for User: {}", userId);
+		return ResponseEntity.ok(analyticsService.calculateHealthScore(userId, month));
 	}
 }

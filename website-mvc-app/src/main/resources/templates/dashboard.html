@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/base :: head('Dashboard - SpendSmart')}"></head>
+
+<body class="bg-light">
+
+	<div th:replace="~{fragments/base :: navbar}"></div>
+
+	<div class="container">
+		<h2 class="mb-4">Welcome back!</h2>
+
+		<div class="row mb-4">
+			<div class="col-md-4">
+				<div class="card text-white bg-success mb-3">
+					<div class="card-body">
+						<h5 class="card-title">Total Income This Month</h5>
+						<h2 class="card-text"
+							th:text="${#numbers.formatCurrency(totalIncome != null ? totalIncome : 0)}">₹0.00</h2>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="card text-white bg-danger mb-3">
+					<div class="card-body">
+						<h5 class="card-title">Total Expenses This Month</h5>
+						<h2 class="card-text"
+							th:text="${#numbers.formatCurrency(totalExpense != null ? totalExpense : 0)}">₹0.00</h2>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="card text-white bg-primary mb-3">
+					<div class="card-body">
+						<h5 class="card-title">Net Savings</h5>
+						<h2 class="card-text" th:text="${#numbers.formatCurrency(netSavings != null ? netSavings : 0)}">
+							₹0.00</h2>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-md-8">
+				<div class="card">
+					<div class="card-header bg-white font-weight-bold">Recent Transactions</div>
+					<div class="card-body">
+						<table class="table table-hover">
+							<thead>
+								<tr>
+									<th>Date</th>
+									<th>Title</th>
+									<th>Type</th>
+									<th>Amount</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="txn : ${recentTransactions}">
+									<td th:text="${txn.date}">2026-04-15</td>
+									<td th:text="${txn.title}">Groceries</td>
+									<td>
+										<span th:if="${txn.type == 'INCOME'}" class="badge bg-success">INCOME</span>
+										<span th:if="${txn.type == 'EXPENSE'}" class="badge bg-danger">EXPENSE</span>
+									</td>
+									<td th:text="${#numbers.formatCurrency(txn.amount)}">₹500.00</td>
+								</tr>
+								<tr th:if="${#lists.isEmpty(recentTransactions)}">
+									<td colspan="4" class="text-center text-muted">No recent transactions found.</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="d-grid gap-2">
+					<a href="/app/expenses/add" class="btn btn-outline-danger btn-lg">+ Add Expense</a>
+					<a href="/app/incomes/add" class="btn btn-outline-success btn-lg">+ Add Income</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div th:replace="~{fragments/base :: scripts}"></div>
+</body>
+
+</html>

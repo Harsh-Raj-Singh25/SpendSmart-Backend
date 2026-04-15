@@ -1,0 +1,19 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: website-mvc-app
+  datasource:
+    # ADDED allowPublicKeyRetrieval=true TO THE END OF THIS LINE
+    url: jdbc:mysql://localhost:3306/spendsmart_web?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
+    username: root
+    password: Harsh@SQL12  
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true

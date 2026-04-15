@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 
 import com.spendsmart.analytics.entity.FinancialSnapshot;
 import com.spendsmart.analytics.model.dto.MonthlySummary;
+import com.spendsmart.analytics.model.dto.SnapshotDto;
 import com.spendsmart.analytics.model.dto.YearlySummary;
 
 public interface AnalyticsService {
@@ -32,5 +33,13 @@ public interface AnalyticsService {
 	List<Map<String, Object>> getDailyExpenseTrend(Integer userId, int year, int month);
 
 	Map<String, BigDecimal> getCashflowData(Integer userId, int month);
+
+	Map<String, Double> calculateCategorySpending(int userId, int month, int year);
+
+	Integer calculateHealthScore(int userId, int month);
+
+	Map<String, Object> calculate6MonthCashflow(int userId, int currentMonth, int currentYear);
+
+	SnapshotDto getMonthlySnapshotDto(int userId, int month, int year);
 
 }
