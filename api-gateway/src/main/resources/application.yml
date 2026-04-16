@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${API_GATEWAY_PORT:8080}
 
 spring:
   main:
@@ -11,7 +11,7 @@ spring:
       globalcors: # Global CORS Configuration (Handles CORS for the whole platform)
         cors-configurations:
           '[/**]':
-            allowedOrigins: "http://localhost:4200"
+            allowedOrigins: "${FRONTEND_ORIGIN:http://localhost:4200}"
             allowedMethods:
               - GET
               - POST
@@ -23,51 +23,51 @@ spring:
             
       routes: 
         - id: auth-service
-          uri: http://localhost:8081 # Where the traffic should go
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081} # Where the traffic should go
           predicates:
-            - Path=/auth, /auth/** # What incoming URLs trigger this route
+            - Path=/auth, /auth/**, /oauth2/**, /login/oauth2/** # Added OAuth2 route
 
         - id: expense-service
-          uri: http://localhost:8082
+          uri: ${EXPENSE_SERVICE_URL:http://localhost:8082}
           predicates:
             - Path=/expenses, /expenses/**
         
         - id: income-service
-          uri: http://localhost:8083
+          uri: ${INCOME_SERVICE_URL:http://localhost:8083}
           predicates:
             - Path=/incomes, /incomes/**
 
         - id: category-service
-          uri: http://localhost:8084
+          uri: ${CATEGORY_SERVICE_URL:http://localhost:8084}
           predicates:
           - Path=/categories, /categories/**
 
         - id: budget-service
-          uri: http://localhost:8085
+          uri: ${BUDGET_SERVICE_URL:http://localhost:8085}
           predicates:
           - Path=/budgets, /budgets/**
 
         - id: analytics-service
-          uri: http://localhost:8086
+          uri: ${ANALYTICS_SERVICE_URL:http://localhost:8086}
           predicates:
           - Path=/analytics, /analytics/**
 
         - id: recurring-transaction-service
-          uri: http://localhost:8087
+          uri: ${RECURRING_SERVICE_URL:http://localhost:8087}
           predicates:
           - Path=/recurring, /recurring/**
 
         - id: notification-service
-          uri: http://localhost:8088
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8088}
           predicates:
           - Path=/notifications, /notifications/**
 
         - id: payment-service
-          uri: http://localhost:8089
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8089}
           predicates:
           - Path=/payments, /payments/**
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}

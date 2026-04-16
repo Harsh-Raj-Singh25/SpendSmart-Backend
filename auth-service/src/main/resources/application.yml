@@ -1,13 +1,23 @@
 server:
-  port: 8081
+  port: ${AUTH_SERVICE_PORT:8081}
 
 spring:
   application:
     name: auth-service
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: "${GOOGLE_OAUTH_CLIENT_ID:PLACEHOLDER_CLIENT_ID}"
+            client-secret: "${GOOGLE_OAUTH_CLIENT_SECRET:PLACEHOLDER_SECRET}"
+            scope:
+              - email
+              - profile
   datasource:
-    url: jdbc:mysql://localhost:3306/spendsmart_auth
-    username: root
-    password: Harsh@SQL12
+    url: ${AUTH_DB_URL:jdbc:mysql://localhost:3306/spendsmart_auth}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -18,16 +28,16 @@ spring:
         format_sql: true
 
 jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-  expiration: 86400000
+  secret: ${JWT_SECRET:CHANGE_ME_IN_ENV}
+  expiration: ${JWT_EXPIRATION_MS:86400000}
 
 # Google OAuth2 Client ID — replace with your actual Google Console client ID.
 # To get one: https://console.cloud.google.com → APIs & Services → Credentials
 # Create an "OAuth 2.0 Client ID" of type "Web application"
 google:
-  client-id: PLACEHOLDER_GOOGLE_CLIENT_ID
+  client-id: ${GOOGLE_CLIENT_ID:PLACEHOLDER_GOOGLE_CLIENT_ID}
 
 eureka:
     client:
       service-url:
-        defaultZone: http://localhost:8761/eureka/
+        defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
