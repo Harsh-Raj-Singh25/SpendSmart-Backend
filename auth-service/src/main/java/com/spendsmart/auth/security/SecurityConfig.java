@@ -30,6 +30,12 @@ public class SecurityConfig {
 	private final JwtFilter jwtFilter;
 	private final CustomUserDetailsService userDetailsService;
 
+	// ── SWAGGER WHITELIST ───────────────────────────────────────────────────
+	// These paths must be completely public so the API Gateway can fetch
+	// the OpenAPI documentation without providing a JWT.
+	private static final String[] SWAGGER_WHITELIST = { "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
+			"/auth/v3/api-docs/**" };
+
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
@@ -40,16 +46,15 @@ public class SecurityConfig {
 				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
 				.authorizeHttpRequests(auth -> auth
+						// ── SWAGGER ENDPOINTS ───────────────────────────────
+						.requestMatchers(SWAGGER_WHITELIST).permitAll()
+
 						// ── PUBLIC ENDPOINTS — no JWT required ──────────────
 						// Registration, login, Google OAuth, and password reset
 						// must be accessible without authentication
-						.requestMatchers(
-								"/auth/register",
-								"/auth/login",
-								"/auth/google",
-								"/auth/forgot-password",
-								"/auth/reset-password"
-						).permitAll()
+						.requestMatchers("/auth/register", "/auth/login", "/auth/google", "/auth/forgot-password",
+								"/auth/reset-password")
+						.permitAll()
 
 						// ── ADMIN-ONLY ENDPOINTS ────────────────────────────
 						// Only users with role=ADMIN in their JWT can access

@@ -1,23 +1,35 @@
 server:
-  port: ${EXPENSE_SERVICE_PORT:8082}
+    port: ${EXPENSE_SERVICE_PORT:8082}
 
 spring:
-  application:
-    name: expense-service
-  datasource:
-    url: ${EXPENSE_DB_URL:jdbc:mysql://localhost:3306/spendsmart_expense?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
+    application:
+        name: expense-service
+    datasource:
+        url: ${EXPENSE_DB_URL:jdbc:mysql://localhost:3306/spendsmart_expense?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true}
+        username: ${DB_USERNAME:root}
+        password: ${DB_PASSWORD:}
+        driver-class-name: com.mysql.cj.jdbc.Driver
+    jpa:
+        hibernate:
+            ddl-auto: update
+        show-sql: true
+        properties:
+            hibernate:
+                format_sql: true
+
+    #RabbitMQ
+    rabbitmq:
+        host: ${RABBITMQ_HOST:localhost}
+        port: ${RABBITMQ_PORT:5672}
+        username: ${RABBITMQ_USERNAME:guest}
+        password: ${RABBITMQ_PASSWORD:guest}
 
 eureka:
     client:
-      service-url:
-        defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
+        service-url:
+            defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
+
+springdoc:
+  api-docs:
+    path: /expenses/v3/api-docs
+

@@ -40,34 +40,57 @@ spring:
         - id: category-service
           uri: ${CATEGORY_SERVICE_URL:http://localhost:8084}
           predicates:
-          - Path=/categories, /categories/**
+            - Path=/categories, /categories/**
 
         - id: budget-service
           uri: ${BUDGET_SERVICE_URL:http://localhost:8085}
           predicates:
-          - Path=/budgets, /budgets/**
+            - Path=/budgets, /budgets/**
 
         - id: analytics-service
           uri: ${ANALYTICS_SERVICE_URL:http://localhost:8086}
           predicates:
-          - Path=/analytics, /analytics/**
+            - Path=/analytics, /analytics/**
 
         - id: recurring-transaction-service
           uri: ${RECURRING_SERVICE_URL:http://localhost:8087}
           predicates:
-          - Path=/recurring, /recurring/**
+            - Path=/recurring, /recurring/**
 
         - id: notification-service
           uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8088}
           predicates:
-          - Path=/notifications, /notifications/**
+            - Path=/notifications, /notifications/**
 
         - id: payment-service
           uri: ${PAYMENT_SERVICE_URL:http://localhost:8089}
           predicates:
-          - Path=/payments, /payments/**
+            - Path=/payments, /payments/**
 
 eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Auth Service
+        url: /auth/v3/api-docs
+      - name: Expense Service
+        url: /expenses/v3/api-docs
+      - name: Income Service
+        url: /incomes/v3/api-docs
+      - name: Category Service
+        url: /categories/v3/api-docs
+      - name: Budget Service
+        url: /budgets/v3/api-docs
+      - name: Analytics Service
+        url: /analytics/v3/api-docs
+      - name: Recurring Transaction Service
+        url: /recurring/v3/api-docs
+      - name: Notification Service
+        url: /notifications/v3/api-docs
+      - name: Payment Service
+        url: /payments/v3/api-docs

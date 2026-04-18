@@ -7,10 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.spendsmart.event.ExpenseCreatedEvent;
 import com.spendsmart.expense.client.BudgetServiceClient;
+import com.spendsmart.expense.config.RabbitMQConfig;
 import com.spendsmart.expense.entity.Expense;
 import com.spendsmart.expense.model.enums.ExpenseType;
 import com.spendsmart.expense.repository.ExpenseRepository;
@@ -25,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ExpenseServiceImpl implements ExpenseService {
 	private final ExpenseRepository expenseRepository;
 	private final BudgetServiceClient budgetServiceClient;
+	// RabbitMQ implementation
+	private final RabbitTemplate rabbitTemplate;
 
 	// Feign client to check user's subscription status (FREE vs PREMIUM)
 	private final com.spendsmart.expense.client.AuthClient authClient;
@@ -46,14 +51,11 @@ public class ExpenseServiceImpl implements ExpenseService {
 
 			if ("FREE".equals(subscriptionType)) {
 				// Count how many expenses this user already has today
-				long todayCount = expenseRepository.countByUserIdAndDate(
-						expense.getUserId(), LocalDate.now());
+				long todayCount = expenseRepository.countByUserIdAndDate(expense.getUserId(), LocalDate.now());
 
 				if (todayCount >= FREE_DAILY_LIMIT) {
-					throw new RuntimeException(
-							"Daily limit reached! FREE users can add up to "
-							+ FREE_DAILY_LIMIT + " expenses per day. "
-							+ "Upgrade to Premium for unlimited access.");
+					throw new RuntimeException("Daily limit reached! FREE users can add up to " + FREE_DAILY_LIMIT
+							+ " expenses per day. " + "Upgrade to Premium for unlimited access.");
 				}
 			}
 		} catch (RuntimeException e) {
@@ -64,7 +66,8 @@ public class ExpenseServiceImpl implements ExpenseService {
 		}
 
 		Expense savedExpense = expenseRepository.save(expense);
-		// Sync with Budget Service
+
+		// ── SYNC WITH BUDGET SERVICE (Synchronous) ──────────────────────
 		try {
 			budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), savedExpense.getCategoryId(),
 					savedExpense.getAmount());
@@ -72,13 +75,28 @@ public class ExpenseServiceImpl implements ExpenseService {
 		} catch (Exception e) {
 			log.error("Failed to update budget. Budget Service might be down: {}", e.getMessage());
 		}
+
+		// ── FIRE EVENT TO RABBITMQ (Asynchronous) ───────────────────────
+		try {
+			ExpenseCreatedEvent event = new ExpenseCreatedEvent(savedExpense.getUserId(), savedExpense.getTitle(),
+					savedExpense.getAmount());
+
+			// Fire and forget: send to the exchange
+			rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY, event);
+			log.info("Successfully published ExpenseCreatedEvent for user: {}", savedExpense.getUserId());
+
+		} catch (Exception e) {
+			// If RabbitMQ is down, we don't crash the request!
+			// The expense is already saved safely in the database.
+			log.error("Failed to publish to RabbitMQ. Notifications may be delayed: {}", e.getMessage());
+		}
+
 		return savedExpense;
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public Expense getExpenseById(Long expenseId) {
-		// TODO Auto-generated method stub
+	public Expense getExpenseById(Long expenseId) { 
 		return expenseRepository.findByExpenseId(expenseId)
 				.orElseThrow(() -> new RuntimeException("Expense not found with ID: " + expenseId));
 
@@ -86,22 +104,19 @@ public class ExpenseServiceImpl implements ExpenseService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<Expense> getExpensesByUser(Integer userId) {
-		// TODO Auto-generated method stub
+	public List<Expense> getExpensesByUser(Integer userId) { 
 		return expenseRepository.findByUserId(userId);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<Expense> getExpensesByCategory(Integer categoryId) {
-		// TODO Auto-generated method stub
+	public List<Expense> getExpensesByCategory(Integer categoryId) { 
 		return expenseRepository.findByCategoryId(categoryId);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<Expense> getExpensesByDateRange(Integer userId, LocalDate start, LocalDate end) {
-		// TODO Auto-generated method stub
+	public List<Expense> getExpensesByDateRange(Integer userId, LocalDate start, LocalDate end) { 
 		return expenseRepository.findByUserIdAndDateBetween(userId, start, end);
 	}
 
@@ -123,14 +138,12 @@ public class ExpenseServiceImpl implements ExpenseService {
 	}
 
 	@Override
-	public List<Expense> searchExpenses(Integer userId, String keyword) {
-		// TODO Auto-generated method stub
+	public List<Expense> searchExpenses(Integer userId, String keyword) { 
 		return expenseRepository.searchExpensesByKeyword(userId, keyword);
 	}
 
 	@Override
-	public Expense updateExpense(Long expenseId, Expense expenseDetails) {
-		// TODO Auto-generated method stub
+	public Expense updateExpense(Long expenseId, Expense expenseDetails) { 
 		log.info("Updating expense ID:{}", expenseId);
 		Expense existingExpense = getExpenseById(expenseId);
 
@@ -149,8 +162,7 @@ public class ExpenseServiceImpl implements ExpenseService {
 		existingExpense.setReceiptUrl(expenseDetails.getReceiptUrl());
 		existingExpense.setIsRecurring(expenseDetails.getIsRecurring());
 
-		Expense savedExpense = expenseRepository.save(existingExpense);
-		// TODO: Adjust Budget-Service (calculate difference and update)
+		Expense savedExpense = expenseRepository.save(existingExpense); 
 		// Sync with Budget Service
 		try {
 			if (!oldCategoryId.equals(savedExpense.getCategoryId())) {
@@ -197,16 +209,14 @@ public class ExpenseServiceImpl implements ExpenseService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public BigDecimal getTotalByUser(Integer userId) {
-		// TODO Auto-generated method stub
+	public BigDecimal getTotalByUser(Integer userId) { 
 		BigDecimal total = expenseRepository.sumAmountByUserId(userId);
 		return total != null ? total : BigDecimal.ZERO;
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public BigDecimal getTotalByCategory(Integer categoryId) {
-		// TODO Auto-generated method stub
+	public BigDecimal getTotalByCategory(Integer categoryId) { 
 		BigDecimal total = expenseRepository.sumAmountByCategoryId(categoryId);
 		return total != null ? total : BigDecimal.ZERO;
 	}
@@ -249,4 +259,7 @@ public class ExpenseServiceImpl implements ExpenseService {
 		BigDecimal total = expenseRepository.sumAmountByUserIdAndDateBetween(userId, start, end);
 		return total != null ? total : BigDecimal.ZERO;
 	}
+	
+	
+
 }
