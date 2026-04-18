@@ -5,6 +5,7 @@ import com.spendsmart.auth.model.enums.SubscriptionType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Builder;
 
 // ============================================================================
 // AUTH RESPONSE — Returned after successful registration, login, or Google auth.
@@ -15,6 +16,7 @@ import lombok.Data;
 // ============================================================================
 @Data
 @AllArgsConstructor
+@Builder
 public class AuthResponse {
 	private String token;           // JWT token for subsequent API calls
 	private int userId;             // User's unique ID across all services
