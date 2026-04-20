@@ -2,6 +2,7 @@ package com.spendsmart.recurring;
 
 import com.spendsmart.recurring.client.ExpenseClient;
 import com.spendsmart.recurring.client.IncomeClient;
+import com.spendsmart.recurring.client.NotificationClient;
 import com.spendsmart.recurring.entity.RecurringTransaction;
 import com.spendsmart.recurring.model.dto.TransactionRequest;
 import com.spendsmart.recurring.model.enums.Frequency;
@@ -18,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,6 +36,9 @@ class RecurringServiceImplTest {
 
 	@Mock
 	private IncomeClient incomeClient;
+
+	@Mock
+	private NotificationClient notificationClient;
 
 	@InjectMocks
 	private RecurringServiceImpl recurringService;
@@ -77,5 +82,94 @@ class RecurringServiceImplTest {
 		// Assert: Verify the date was moved forward by 1 month and saved
 		assertEquals(LocalDate.now().plusMonths(1), mockTransaction.getNextDueDate());
 		verify(recurringRepository, times(1)).save(mockTransaction);
+	}
+
+	@Test
+	void basicCrudMethods_DelegateToRepository() {
+		when(recurringRepository.save(mockTransaction)).thenReturn(mockTransaction);
+		assertEquals(1, recurringService.addRecurring(mockTransaction).getRecurringId());
+
+		when(recurringRepository.findByUserId(5)).thenReturn(List.of(mockTransaction));
+		assertEquals(1, recurringService.getByUser(5).size());
+
+		when(recurringRepository.findById(1)).thenReturn(Optional.of(mockTransaction));
+		assertTrue(recurringService.getById(1).isPresent());
+
+		when(recurringRepository.findByUserIdAndIsActive(5, true)).thenReturn(List.of(mockTransaction));
+		assertEquals(1, recurringService.getActiveRecurring(5).size());
+
+		recurringService.deleteRecurring(1);
+		verify(recurringRepository).deleteById(1);
+	}
+
+	@Test
+	void updateDeactivateAndUpcomingBehaviors_WorkAsExpected() {
+		RecurringTransaction details = RecurringTransaction.builder()
+				.title("Updated")
+				.amount(new BigDecimal("1200.00"))
+				.frequency(Frequency.WEEKLY)
+				.endDate(LocalDate.now().plusMonths(1))
+				.build();
+
+		when(recurringRepository.findById(1)).thenReturn(Optional.of(mockTransaction));
+		when(recurringRepository.save(any(RecurringTransaction.class))).thenAnswer(i -> i.getArguments()[0]);
+
+		RecurringTransaction updated = recurringService.updateRecurring(1, details);
+		assertEquals("Updated", updated.getTitle());
+		assertEquals(Frequency.WEEKLY, updated.getFrequency());
+
+		recurringService.deactivateRecurring(1);
+		assertFalse(mockTransaction.getIsActive());
+
+		when(recurringRepository.findByUserIdAndIsActiveTrueAndNextDueDateBetween(eq(5), any(LocalDate.class), any(LocalDate.class)))
+				.thenReturn(List.of(mockTransaction));
+		assertEquals(1, recurringService.getUpcomingThisMonth(5).size());
+	}
+
+	@Test
+	void generateTransactionFromRecurring_RoutesToIncomeWhenTypeIsIncome() {
+		RecurringTransaction incomeRecurring = RecurringTransaction.builder()
+				.recurringId(2)
+				.userId(5)
+				.categoryId(11)
+				.title("Freelance")
+				.amount(new BigDecimal("5000.00"))
+				.type(TransactionType.INCOME)
+				.frequency(Frequency.MONTHLY)
+				.startDate(LocalDate.now())
+				.nextDueDate(LocalDate.now())
+				.isActive(true)
+				.paymentMethod("BANK")
+				.build();
+
+		recurringService.generateTransactionFromRecurring(incomeRecurring);
+
+		verify(incomeClient, times(1)).addIncome(any(TransactionRequest.class));
+		verify(expenseClient, never()).addExpense(any(TransactionRequest.class));
+	}
+
+	@Test
+	void processUpcomingDue_SendsReminderForThreeDayDue() {
+		RecurringTransaction reminderTxn = RecurringTransaction.builder()
+				.recurringId(3)
+				.userId(5)
+				.categoryId(10)
+				.title("EMI")
+				.amount(new BigDecimal("2000.00"))
+				.type(TransactionType.EXPENSE)
+				.frequency(Frequency.MONTHLY)
+				.startDate(LocalDate.now())
+				.nextDueDate(LocalDate.now().plusDays(3))
+				.isActive(true)
+				.paymentMethod("UPI")
+				.build();
+
+		when(recurringRepository.findByIsActiveTrueAndNextDueDateLessThanEqual(any(LocalDate.class)))
+				.thenReturn(List.of())
+				.thenReturn(List.of(reminderTxn));
+
+		recurringService.processUpcomingDue();
+
+		verify(notificationClient, atLeastOnce()).sendNotification(any());
 	}
 }

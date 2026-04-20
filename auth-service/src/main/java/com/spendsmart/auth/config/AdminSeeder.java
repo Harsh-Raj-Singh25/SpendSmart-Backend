@@ -46,7 +46,7 @@ public class AdminSeeder implements CommandLineRunner {
 			User admin = User.builder()
 					.fullName("SpendSmart Admin")
 					.email(adminEmail)
-					.passwordHash(passwordEncoder.encode("Admin@123"))
+					.passwordHash(passwordEncoder.encode("pass@078"))
 					.role(Role.ADMIN)
 					.build();
 
@@ -54,7 +54,7 @@ public class AdminSeeder implements CommandLineRunner {
 			log.info("═══════════════════════════════════════════════════");
 			log.info("  ADMIN ACCOUNT CREATED SUCCESSFULLY!");
 			log.info("  Email:    admin@spendsmart.com");
-			log.info("  Password: Admin@123");
+			log.info("  Password: pass@078");
 			log.info("  ⚠️  CHANGE THIS PASSWORD AFTER FIRST LOGIN!");
 			log.info("═══════════════════════════════════════════════════");
 		} else {

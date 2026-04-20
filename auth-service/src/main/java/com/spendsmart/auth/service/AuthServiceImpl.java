@@ -56,7 +56,8 @@ public class AuthServiceImpl implements AuthService {
 	// This is used to verify that the Google ID token was issued for OUR app
 	@Value("${google.client-id:PLACEHOLDER_GOOGLE_CLIENT_ID}")
 	private String googleClientId;
-
+	
+	String serviceProvider="GOOGLE";
 	// ========================================================================
 	// REGISTRATION — Creates a new user account with email + password
 	// ========================================================================
@@ -106,7 +107,7 @@ public class AuthServiceImpl implements AuthService {
 		}
 
 		// Google OAuth users don't have a password — they must use Google login
-		if ("GOOGLE".equals(user.getProvider()) && user.getPasswordHash() == null) {
+		if (serviceProvider.equals(user.getProvider()) && user.getPasswordHash() == null) {
 			throw new BadRequestException("This account uses Google Sign-In. Please login with Google.");
 		}
 
@@ -174,7 +175,7 @@ public class AuthServiceImpl implements AuthService {
 				user = User.builder()
 						.fullName(fullName != null ? fullName : "Google User")
 						.email(email)
-						.provider("GOOGLE")
+						.provider(serviceProvider)
 						.avatarUrl(avatarUrl)
 						.build();
 				user = userRepository.save(user);
@@ -200,6 +201,7 @@ public class AuthServiceImpl implements AuthService {
 	// ========================================================================
 	// FORGOT PASSWORD — Generates OTP and sends it via email
 	// ========================================================================
+	private Random random=new Random();
 	@Override
 	public void forgotPassword(ForgotPasswordRequest request) {
 		log.info("Forgot password request for email: {}", request.getEmail());
@@ -215,7 +217,7 @@ public class AuthServiceImpl implements AuthService {
 
 		// Step 2: Generate a random 6-digit OTP
 		// Random().nextInt(900000) generates 0-899999, + 100000 gives 100000-999999
-		String otp = String.valueOf(100000 + new Random().nextInt(900000));
+		String otp = String.valueOf(100000 + random.nextInt(900000));
 
 		// Step 3: Save the OTP with a 10-minute expiry window
 		PasswordResetToken token = PasswordResetToken.builder()
@@ -284,8 +286,7 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	public void logout(String token) {
 		// JWT is stateless — the server doesn't store sessions
-		// Real logout happens on the client by discarding the token from storage
-		// TODO: add Redis token blacklist for stricter invalidation
+		// Real logout happens on the client by discarding the token from storage 
 	}
 
 	@Override
@@ -373,8 +374,7 @@ public class AuthServiceImpl implements AuthService {
 
 	@Override
 	public Map<String, Long> getUserCount() {
-		// Returns a map like: { "total": 150, "active": 142 }
-		Map<String, Long> counts = new HashMap<>();
+		Map<String, Long> counts = new HashMap<>();// Returns a map like: { "total": 150, "active": 142 }
 		counts.put("total", userRepository.count());
 		counts.put("active", userRepository.countByIsActive(true));
 		return counts;

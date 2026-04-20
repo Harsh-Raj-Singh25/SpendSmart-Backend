@@ -115,7 +115,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             map.put("income", s.getTotalIncome());
             map.put("expense", s.getTotalExpenses());
             return map;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     @Override
@@ -126,7 +126,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             map.put("month", s.getMonth());
             map.put("savingsRate", s.getSavingsRate());
             return map;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     @Override
@@ -137,7 +137,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         return breakdown.entrySet().stream()
                 .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
                 .limit(5)
-                .collect(Collectors.toList());
+                .toList();
+//                .collect(Collectors.toList()); // removed to maintain code quality
     }
 
     @Override
@@ -215,7 +216,12 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     private String getTopCategoryFromMap(Map<String, BigDecimal> breakdown) {
         if (breakdown == null || breakdown.isEmpty()) return "None";
-        return breakdown.entrySet().stream().max(Map.Entry.comparingByValue()).get().getKey();
+        return breakdown.entrySet().stream()
+        		.filter(entry -> entry.getValue() != null)
+        		.max(Map.Entry.comparingByValue())
+        		.map(Map.Entry::getKey)
+                .orElse("None"); 
+        
     }
     
     // ========================================================================

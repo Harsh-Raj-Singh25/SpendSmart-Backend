@@ -18,6 +18,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -160,5 +161,118 @@ class ExpenseServiceImplTest {
 
 		// Assert
 		assertEquals(BigDecimal.ZERO, total);
+	}
+
+	@Test
+	void addExpense_WhenSubscriptionCheckFails_StillSaves() {
+		when(authClient.getSubscriptionStatus(1)).thenThrow(new RuntimeException("auth unavailable"));
+		when(expenseRepository.save(any(Expense.class))).thenReturn(mockExpense);
+
+		Expense saved = expenseService.addExpense(mockExpense);
+
+		assertEquals(1L, saved.getExpenseId());
+		verify(expenseRepository).save(mockExpense);
+	}
+
+	@Test
+	void queryMethods_ReturnRepositoryValues() {
+		when(expenseRepository.findByUserId(1)).thenReturn(List.of(mockExpense));
+		when(expenseRepository.findByCategoryId(101)).thenReturn(List.of(mockExpense));
+		when(expenseRepository.findByUserIdAndDateBetween(eq(1), any(LocalDate.class), any(LocalDate.class)))
+				.thenReturn(List.of(mockExpense));
+		when(expenseRepository.findByUserIdAndType(1, ExpenseType.EXPENSE)).thenReturn(List.of(mockExpense));
+		when(expenseRepository.searchExpensesByKeyword(1, "groc")).thenReturn(List.of(mockExpense));
+
+		assertEquals(1, expenseService.getExpensesByUser(1).size());
+		assertEquals(1, expenseService.getExpensesByCategory(101).size());
+		assertEquals(1, expenseService.getExpensesByDateRange(1, LocalDate.now().minusDays(1), LocalDate.now()).size());
+		assertEquals(1, expenseService.getExpensesByMonth(1, 2026, 4).size());
+		assertEquals(1, expenseService.getExpensesByType(1, ExpenseType.EXPENSE).size());
+		assertEquals(1, expenseService.searchExpenses(1, "groc").size());
+	}
+
+	@Test
+	void updateExpense_AdjustsBudgetWhenAmountChanges() {
+		Expense existing = Expense.builder()
+				.expenseId(1L)
+				.userId(1)
+				.categoryId(101)
+				.title("Old")
+				.amount(new BigDecimal("100.00"))
+				.currency("INR")
+				.type(ExpenseType.EXPENSE)
+				.paymentMethod(PaymentMethod.CASH)
+				.date(LocalDate.now())
+				.isRecurring(false)
+				.build();
+
+		Expense updated = Expense.builder()
+				.categoryId(101)
+				.title("New")
+				.amount(new BigDecimal("140.00"))
+				.currency("INR")
+				.type(ExpenseType.EXPENSE)
+				.paymentMethod(PaymentMethod.UPI)
+				.date(LocalDate.now())
+				.isRecurring(false)
+				.build();
+
+		when(expenseRepository.findByExpenseId(1L)).thenReturn(Optional.of(existing));
+		when(expenseRepository.save(any(Expense.class))).thenAnswer(i -> i.getArguments()[0]);
+
+		Expense result = expenseService.updateExpense(1L, updated);
+
+		assertEquals(new BigDecimal("140.00"), result.getAmount());
+		verify(budgetServiceClient).updateSpentAmountByCategory(1, 101, new BigDecimal("40.00"));
+	}
+
+	@Test
+	void updateExpense_RefundsOldAndChargesNewCategory() {
+		Expense existing = Expense.builder()
+				.expenseId(1L)
+				.userId(1)
+				.categoryId(101)
+				.amount(new BigDecimal("200.00"))
+				.paymentMethod(PaymentMethod.CARD)
+				.type(ExpenseType.EXPENSE)
+				.date(LocalDate.now())
+				.isRecurring(false)
+				.build();
+
+		Expense updated = Expense.builder()
+				.categoryId(202)
+				.title("Moved")
+				.amount(new BigDecimal("300.00"))
+				.currency("INR")
+				.type(ExpenseType.EXPENSE)
+				.paymentMethod(PaymentMethod.CARD)
+				.date(LocalDate.now())
+				.isRecurring(false)
+				.build();
+
+		when(expenseRepository.findByExpenseId(1L)).thenReturn(Optional.of(existing));
+		when(expenseRepository.save(any(Expense.class))).thenAnswer(i -> i.getArguments()[0]);
+
+		expenseService.updateExpense(1L, updated);
+
+		verify(budgetServiceClient).updateSpentAmountByCategory(1, 101, new BigDecimal("-200.00"));
+		verify(budgetServiceClient).updateSpentAmountByCategory(1, 202, new BigDecimal("300.00"));
+	}
+
+	@Test
+	void deleteAndAnalyticsTotals_WorkAsExpected() {
+		when(expenseRepository.findByExpenseId(1L)).thenReturn(Optional.of(mockExpense));
+
+		expenseService.deleteExpense(1L);
+		verify(expenseRepository).deleteByExpenseId(1L);
+		verify(budgetServiceClient).updateSpentAmountByCategory(1, 101, new BigDecimal("-1500.00"));
+
+		when(expenseRepository.sumAmountByCategoryId(101)).thenReturn(new BigDecimal("2500.00"));
+		assertEquals(new BigDecimal("2500.00"), expenseService.getTotalByCategory(101));
+
+		when(expenseRepository.sumAmountByUserIdAndDateBetween(eq(1), any(LocalDate.class), any(LocalDate.class)))
+				.thenReturn(new BigDecimal("11000.00"));
+		assertEquals(new BigDecimal("11000.00"), expenseService.getTotalExpenseByYear(1, 2026));
+		assertEquals(new BigDecimal("11000.00"), expenseService.getTotalExpenseByMonth(1, 2026, 4));
 	}
 }

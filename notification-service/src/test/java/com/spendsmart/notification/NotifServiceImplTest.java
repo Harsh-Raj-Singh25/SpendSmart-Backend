@@ -15,6 +15,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
  
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -74,11 +76,13 @@ class NotifServiceImplTest {
                 .build();
 
         // Act
+        when(client.getUserEmail(5)).thenReturn(Map.of("email", "user@test.com"));
+
         notifService.send(criticalNotif);
 
         // Assert
         verify(notificationRepository, times(1)).save(criticalNotif);
-//        verify(emailSender, times(1)).send(any(SimpleMailMessage.class));
+        verify(emailSender, times(1)).send(any(SimpleMailMessage.class));
     }
 
     @Test
@@ -94,5 +98,65 @@ class NotifServiceImplTest {
         // Assert
         assertTrue(mockNotif.isRead());
         verify(notificationRepository, times(1)).save(mockNotif);
+    }
+
+    @Test
+    void send_CriticalSeverityWithoutEmail_DoesNotDispatchMail() {
+        Notification criticalNotif = Notification.builder()
+                .recipientId(10)
+                .severity("CRITICAL")
+                .type("BUDGET_EXCEEDED")
+                .title("Danger")
+                .message("Over budget")
+                .build();
+        when(client.getUserEmail(10)).thenReturn(Map.of());
+
+        notifService.send(criticalNotif);
+
+        verify(notificationRepository).save(criticalNotif);
+        verify(emailSender, never()).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void sendBudgetAlert_BuildsAndSendsCriticalNotification() {
+        when(client.getUserEmail(5)).thenReturn(Map.of("email", "user@test.com"));
+
+        notifService.sendBudgetAlert(5, "Budget Alert", 123.45);
+
+        verify(notificationRepository, atLeastOnce()).save(any(Notification.class));
+        verify(emailSender, atLeastOnce()).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void bulkAndStateMutationMethods_WorkAsExpected() {
+        Notification unread = Notification.builder().notificationId(2).recipientId(5).severity("INFO").title("t").message("m").build();
+        unread.setRead(false);
+
+        when(notificationRepository.findById(2)).thenReturn(Optional.of(unread));
+        when(notificationRepository.findByRecipientIdAndIsRead(5, false)).thenReturn(List.of(unread));
+        when(notificationRepository.findByRecipientId(5)).thenReturn(List.of(unread));
+        when(notificationRepository.countByRecipientIdAndIsRead(5, false)).thenReturn(1);
+
+        notifService.sendBulk(List.of(5, 6), "System", "Maintenance");
+        verify(notificationRepository, atLeast(2)).save(any(Notification.class));
+
+        notifService.markAllRead(5);
+        verify(notificationRepository).saveAll(anyList());
+
+        notifService.acknowledge(2);
+        assertTrue(unread.isRead());
+        assertTrue(unread.isAcknowledged());
+
+        assertTrue(notifService.getByRecipient(5).size() == 1);
+        assertTrue(notifService.getUnreadCount(5) == 1);
+
+        notifService.deleteNotification(2);
+        verify(notificationRepository).deleteByNotificationId(2);
+    }
+
+    @Test
+    void sendDirectEmail_DelegatesToMailSender() {
+        notifService.sendDirectEmail("alpha.user@test.com", "OTP", "123456");
+        verify(emailSender).send(any(SimpleMailMessage.class));
     }
 }
