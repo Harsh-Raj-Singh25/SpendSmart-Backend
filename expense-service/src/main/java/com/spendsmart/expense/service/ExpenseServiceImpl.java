@@ -45,6 +45,9 @@ public class ExpenseServiceImpl implements ExpenseService {
 		// Before saving, check if the user is on the FREE tier.
 		// FREE users can only add 7 expenses per day.
 		// PREMIUM users have unlimited expenses.
+		if (expense.getDate() == null) {
+		    expense.setDate(LocalDate.now()); // Default to today if missing
+		}
 		try {
 			var subscriptionStatus = authClient.getSubscriptionStatus(expense.getUserId());
 			String subscriptionType = (String) subscriptionStatus.get("subscriptionType");
@@ -54,11 +57,11 @@ public class ExpenseServiceImpl implements ExpenseService {
 				long todayCount = expenseRepository.countByUserIdAndDate(expense.getUserId(), LocalDate.now());
 
 				if (todayCount >= FREE_DAILY_LIMIT) {
-					throw new RuntimeException("Daily limit reached! FREE users can add up to " + FREE_DAILY_LIMIT
+					throw new IllegalStateException("Daily limit reached! FREE users can add up to " + FREE_DAILY_LIMIT
 							+ " expenses per day. " + "Upgrade to Premium for unlimited access.");
 				}
 			}
-		} catch (RuntimeException e) {
+		} catch (IllegalStateException e) {
 			throw e; // Re-throw our limit exceeded exception
 		} catch (Exception e) {
 			// If auth-service is down, allow the expense (graceful degradation)

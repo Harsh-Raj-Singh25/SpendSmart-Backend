@@ -1,5 +1,6 @@
 package com.spendsmart.notification.service;
 
+import com.spendsmart.notification.client.AuthClient;
 import com.spendsmart.notification.entity.Notification;
 import com.spendsmart.notification.repository.NotificationRepository; 
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import java.util.Optional;
 public class NotifServiceImpl implements NotifService {
 
 	private final NotificationRepository notificationRepository;
+	private final AuthClient authClient;
 
 	// Spring automatically injects this because of the dependency and YAML config
 	private final JavaMailSender emailSender;
@@ -38,13 +40,27 @@ public class NotifServiceImpl implements NotifService {
 		if ("CRITICAL".equalsIgnoreCase(notification.getSeverity())) {
 			log.warn("CRITICAL severity detected. Triggering email dispatch for Notification ID: {}",
 					notification.getNotificationId());
-
-			// In a fully integrated system, you would call Auth/User Service here to get
-			// the user's real email.
-			// For now, hardcode your own secondary email address here to test it!
-			String targetEmail = "recipient.email@example.com";
-
-			sendEmail(targetEmail, notification.getTitle(), notification.getMessage());
+			// getting the mail of the recipient using the auth client
+			String targetEmail = resolveRecipientEmail(notification.getRecipientId());
+			if (targetEmail != null && !targetEmail.isBlank()) {
+				sendEmail(targetEmail, notification.getTitle(), notification.getMessage());
+			} else {
+				log.warn("Skipping CRITICAL email dispatch. No email found for Recipient ID: {}",
+						notification.getRecipientId());
+			}
+		}
+	}
+	// Helper method to resolve recipient's email via auth-service Feign client
+	private String resolveRecipientEmail(Integer recipientId) {
+		if (recipientId == null) {
+			return null;
+		}
+		try {
+			var response = authClient.getUserEmail(recipientId);
+			return response != null ? response.get("email") : null;
+		} catch (Exception e) {
+			log.error("Failed to resolve email for Recipient ID {} via auth-service: {}", recipientId, e.getMessage());
+			return null;
 		}
 	}
 
@@ -53,9 +69,17 @@ public class NotifServiceImpl implements NotifService {
 		log.info("Generating domain-specific BUDGET_ALERT for Recipient ID: {} | Exceeded Amount: {}", recipientId,
 				amount);
 
+		String message;
+		if (amount > 0) {
+			message = "Attention! You have exceeded your budget by " + String.format("%.2f", amount)
+					+ ". Please review your expenses immediately.";
+		} else {
+			message = "Heads up! You are approaching your budget limit (above 85% usage). "
+					+ "Please monitor your upcoming expenses.";
+		}
+
 		Notification alert = Notification.builder().recipientId(recipientId).type("BUDGET_EXCEEDED")
-				.severity("CRITICAL").title(title).message("Attention! You have exceeded your budget by " + amount
-						+ ". Please review your expenses immediately.")
+				.severity("CRITICAL").title(title).message(message)
 				.isRead(false).isAcknowledged(false).build();
 
 		send(alert);
@@ -127,11 +151,14 @@ public class NotifServiceImpl implements NotifService {
 	// --- The Actual Email Dispatch Method ---
 	private void sendEmail(String to, String subject, String text) {
 		try {
+			String finalSubject = buildImpressiveSubject(subject, text);
+			String finalBody = buildImpressiveBody(to, subject, text);
+
 			SimpleMailMessage message = new SimpleMailMessage();
 			message.setFrom(senderEmail);
 			message.setTo(to);
-			message.setSubject(subject);
-			message.setText(text);
+			message.setSubject(finalSubject);
+			message.setText(finalBody);
 
 			emailSender.send(message);
 			log.info("Live email successfully sent to {}", to);
@@ -140,5 +167,59 @@ public class NotifServiceImpl implements NotifService {
 			// Catches connection timeouts, bad passwords, or invalid email formats
 			log.error("CRITICAL: Failed to send actual email to {}. Error: {}", to, e.getMessage());
 		}
+	}
+
+	private String buildImpressiveSubject(String subject, String body) {
+		String safeSubject = subject == null ? "SpendSmart Notification" : subject.trim();
+		String context = (safeSubject + " " + (body == null ? "" : body)).toLowerCase();
+
+		if (context.contains("otp") || context.contains("password reset")) {
+			return "[SpendSmart Security] " + safeSubject;
+		}
+		if (context.contains("budget")) {
+			return "[SpendSmart Insights] " + safeSubject;
+		}
+		return "[SpendSmart] " + safeSubject;
+	}
+
+	private String buildImpressiveBody(String to, String subject, String body) {
+		String safeBody = body == null ? "" : body.trim();
+		String displayName = deriveDisplayNameFromEmail(to);
+		String context = ((subject == null ? "" : subject) + " " + safeBody).toLowerCase();
+
+		String intro;
+		String guidance;
+		if (context.contains("otp") || context.contains("password reset")) {
+			intro = "A secure action was initiated on your SpendSmart account.";
+			guidance = "For your safety, never share this code with anyone. SpendSmart support will never ask for your OTP.";
+		} else if (context.contains("budget")) {
+			intro = "Your financial assistant has detected an important budget update.";
+			guidance = "Quick tip: review this category and rebalance upcoming expenses to stay on track this month.";
+		} else {
+			intro = "Here is an important update from your SpendSmart account.";
+			guidance = "Open SpendSmart for full details and recommended next actions.";
+		}
+
+		return "Hello " + displayName + ",\n\n"
+				+ intro + "\n\n"
+				+ safeBody + "\n\n"
+				+ guidance + "\n\n"
+				+ "Thank you for trusting SpendSmart to manage your financial journey.\n"
+				+ "- Team SpendSmart";
+	}
+
+	private String deriveDisplayNameFromEmail(String email) {
+		if (email == null || email.isBlank() || !email.contains("@")) {
+			return "there";
+		}
+		String localPart = email.substring(0, email.indexOf('@')).trim();
+		if (localPart.isEmpty()) {
+			return "there";
+		}
+		String cleaned = localPart.replace('.', ' ').replace('_', ' ').replace('-', ' ').trim();
+		if (cleaned.isEmpty()) {
+			return "there";
+		}
+		return Character.toUpperCase(cleaned.charAt(0)) + cleaned.substring(1);
 	}
 }

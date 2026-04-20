@@ -137,4 +137,12 @@ public class AuthResource {
 	public ResponseEntity<Map<String, Object>> getSubscriptionStatus(@PathVariable int userId) {
 		return ResponseEntity.ok(authService.getSubscriptionStatus(userId));
 	}
+
+	// Internal endpoint for trusted inter-service communication.
+	// Called by notification-service to fetch recipient email for critical alerts.
+	@GetMapping("/internal/users/{userId}/email")
+	public ResponseEntity<Map<String, String>> getUserEmail(@PathVariable int userId) {
+		User user = authService.getUserById(userId);
+		return ResponseEntity.ok(Map.of("email", user.getEmail()));
+	}
 }

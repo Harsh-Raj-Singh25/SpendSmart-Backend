@@ -64,6 +64,8 @@ public class SecurityConfig {
 						// payment-service calls these to upgrade users after payment
 						// expense/income services call to check subscription status
 						.requestMatchers("/auth/subscription/**").permitAll()
+						// Internal service-to-service endpoint used by notification-service
+						.requestMatchers("/auth/internal/**").permitAll()
 
 						// ── EVERYTHING ELSE — requires valid JWT ────────────
 						.anyRequest().authenticated())

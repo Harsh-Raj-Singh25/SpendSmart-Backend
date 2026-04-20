@@ -141,4 +141,4 @@ $sonar.projectCreation.mainBranchNamemain"+
 #sonar.azureresourcemanager.activatetrue".
 &sonar.java.jvmframeworkconfig.activatetrue"e
 sonar.updatecenter.urlKhttps://downloads.sonarsource.com/sonarqube/update/update-center.properties"0
-sonar.core.startTime2026-04-18T15:46:25+05302147B411E-AZ2gF3mdxnyYJdB-R4Qg
+sonar.core.startTime2026-04-20T10:23:57+05302147B411E-AZ2gF3mdxnyYJdB-R4Qg

@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    # dummy properties so the @Value annotations don't crash
+  mail:
+    username: "dummy_test_user@gmail.com"
+    password: "dummy_password"
+jwt:
+  secret: "this_is_a_super_long_dummy_secret_key_just_for_running_tests_safely" 
+  expiration: 86400000 # <-- ADD THIS! (86400000 ms = 24 hours)
+
+eureka:
+  client:
+    enabled: false # Turns off the Eureka Client ONLY during tests!
