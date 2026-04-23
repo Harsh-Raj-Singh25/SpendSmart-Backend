@@ -1,7 +1,5 @@
 # SpendSmart Backend
 
-> Draft v1 for review. Confirm and I will finalize/tighten this content exactly to your preferred style.
-
 Enterprise-grade personal finance backend built with Spring Boot microservices, Spring Cloud Gateway, Eureka service discovery, JWT auth, asynchronous eventing (RabbitMQ), and payment integration.
 
 ## 1) At a Glance
@@ -143,13 +141,15 @@ flowchart LR
     BU[Budget Service]
     MQ[(RabbitMQ)]
     NO[Notification Service]
+    NDB[(Notification DB)]
     EM[SMTP Email]
 
-    C -->|POST /expenses| GW --> EX
+    C -->|POST /expenses| GW
+    GW --> EX
     EX -->|sync update spent amount| BU
     EX -->|publish ExpenseCreatedEvent| MQ
-    MQ -->|@RabbitListener| NO
-    NO -->|persist INFO/WARNING| NO
+    MQ -->|event consumer| NO
+    NO -->|persist INFO and WARNING| NDB
     NO -->|if CRITICAL then dispatch| EM
 ```
 
