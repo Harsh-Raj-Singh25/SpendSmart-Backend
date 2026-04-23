@@ -5,6 +5,8 @@ import com.spendsmart.budget.model.dto.BudgetProgress;
 import com.spendsmart.budget.repository.BudgetRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,12 +18,12 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
+//@Slf4j
 @Transactional
 public class BudgetServiceImpl implements BudgetService {
 
 	private final BudgetRepository budgetRepository;
-
+	Logger log=new Logger();
 	@Override
 	public Budget createBudget(Budget budget) {
 		log.info("Creating budget for user: {} and category: {}", budget.getUserId(), budget.getCategoryId());
@@ -160,6 +162,7 @@ public class BudgetServiceImpl implements BudgetService {
 	@Override
 	@Transactional(readOnly = true)
 	public Double getOverallBudgetAdherence(Integer userId) {
+		
 		List<Budget> activeBudgets = budgetRepository.findByUserIdAndIsActive(userId, true);
 		if (activeBudgets.isEmpty())
 			return 0.0;

@@ -35,11 +35,6 @@ import java.util.*;
 // 4. Admin operations (list/suspend/reactivate/delete users)
 // 5. Forgot Password flow (OTP generation + verification)
 // 6. Subscription management (upgrade to PREMIUM after payment)
-//
-// DEPENDENCY INJECTION:
-// @RequiredArgsConstructor generates a constructor with all `final` fields.
-// Spring uses this constructor to inject all dependencies automatically.
-// ============================================================================
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -57,10 +52,8 @@ public class AuthServiceImpl implements AuthService {
 	@Value("${google.client-id:PLACEHOLDER_GOOGLE_CLIENT_ID}")
 	private String googleClientId;
 	
-	String serviceProvider="GOOGLE";
-	// ========================================================================
+	String serviceProvider="GOOGLE"; 
 	// REGISTRATION — Creates a new user account with email + password
-	// ========================================================================
 	@Override
 	public AuthResponse register(RegisterRequest request) {
 		log.info("Attempting to register new user with email: {}", request.getEmail());
@@ -86,10 +79,8 @@ public class AuthServiceImpl implements AuthService {
 		return new AuthResponse(token, savedUser.getUserId(), savedUser.getFullName(), savedUser.getEmail(),
 				savedUser.getRole(), savedUser.getSubscriptionType());
 	}
-
-	// ========================================================================
-	// LOGIN — Validates email + password credentials and returns JWT
-	// ========================================================================
+ 
+	// LOGIN — Validates email + password credentials and returns JWT token
 	@Override
 	public AuthResponse login(LoginRequest request) {
 		log.info("Attempting login for email: {}", request.getEmail());
@@ -126,10 +117,8 @@ public class AuthServiceImpl implements AuthService {
 		return new AuthResponse(token, user.getUserId(), user.getFullName(), user.getEmail(),
 				user.getRole(), user.getSubscriptionType());
 	}
-
-	// ========================================================================
-	// GOOGLE OAUTH2 LOGIN — Verifies Google ID token, find-or-create user
-	// ========================================================================
+ 
+	// GOOGLE OAUTH2 LOGIN — Verifies Google ID token, find-or-create user 
 	@Override
 	public AuthResponse googleLogin(GoogleAuthRequest request) {
 		log.info("Attempting Google OAuth login");
@@ -198,9 +187,7 @@ public class AuthServiceImpl implements AuthService {
 		}
 	}
 
-	// ========================================================================
-	// FORGOT PASSWORD — Generates OTP and sends it via email
-	// ========================================================================
+	// FORGOT PASSWORD — Generates OTP and sends it via email 
 	private Random random=new Random();
 	@Override
 	public void forgotPassword(ForgotPasswordRequest request) {
@@ -244,10 +231,8 @@ public class AuthServiceImpl implements AuthService {
 			// We don't throw here — the OTP is saved in DB, user can retry
 		}
 	}
-
-	// ========================================================================
-	// RESET PASSWORD — Verifies OTP and sets new password
-	// ========================================================================
+ 
+	// RESET PASSWORD — Verifies OTP and sets new password 
 	@Override
 	public void resetPassword(ResetPasswordRequest request) {
 		log.info("Password reset attempt for email: {}", request.getEmail());
@@ -280,9 +265,7 @@ public class AuthServiceImpl implements AuthService {
 		log.info("Password reset successful for email: {}", request.getEmail());
 	}
 
-	// ========================================================================
 	// TOKEN MANAGEMENT
-	// ========================================================================
 	@Override
 	public void logout(String token) {
 		// JWT is stateless — the server doesn't store sessions
@@ -304,9 +287,7 @@ public class AuthServiceImpl implements AuthService {
 		return jwtUtil.generateToken(user.getEmail(), user.getUserId(), user.getRole());
 	}
 
-	// ========================================================================
 	// PROFILE MANAGEMENT
-	// ========================================================================
 	@Override
 	public User getUserById(int userId) {
 		return userRepository.findById(userId)
@@ -359,9 +340,7 @@ public class AuthServiceImpl implements AuthService {
 		userRepository.save(user);
 	}
 
-	// ========================================================================
 	// ADMIN OPERATIONS — Only accessible by users with ADMIN role
-	// ========================================================================
 	@Override
 	public List<User> getAllUsers() {
 		return userRepository.findAll();
@@ -406,9 +385,7 @@ public class AuthServiceImpl implements AuthService {
 		log.info("User {} permanently deleted by admin", userId);
 	}
 
-	// ========================================================================
 	// SUBSCRIPTION MANAGEMENT — Freemium model
-	// ========================================================================
 
 	@Override
 	public void upgradeToPremium(int userId) {
@@ -434,9 +411,7 @@ public class AuthServiceImpl implements AuthService {
 		return status;
 	}
 
-	// ========================================================================
 	// PRIVATE HELPERS
-	// ========================================================================
 
 	// Checks if a PREMIUM subscription has expired and auto-downgrades to FREE
 	private void checkAndExpirePremium(User user) {
