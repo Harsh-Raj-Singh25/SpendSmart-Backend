@@ -1,4 +1,4 @@
-it # SpendSmart Backend
+# SpendSmart Backend
 
 > Draft v1 for review. Confirm and I will finalize/tighten this content exactly to your preferred style.
 
