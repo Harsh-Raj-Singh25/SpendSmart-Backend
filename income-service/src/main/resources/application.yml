@@ -4,6 +4,15 @@ server:
 spring:
   application:
     name: income-service
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+      client:
+        config:
+          default:
+            connectTimeout: 2000
+            readTimeout: 4000
   datasource:
     url: ${INCOME_DB_URL:jdbc:mysql://localhost:3306/spendsmart_income?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true}
     username: ${DB_USERNAME:root}
@@ -25,3 +34,51 @@ eureka:
 springdoc:
   api-docs:
     path: /incomes/v3/api-docs
+
+info:
+  app:
+    name: "Income-Service"
+    description: "Income-Service layer for SpendSmart Application"
+    version: "1.0.0"
+  author:
+    name: "Harsh Raj Singh"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
+
+# Enable AOP entry-argument debug logs for local debugging; reduce in production
+logging:
+  level:
+    com.spendsmart.income.aop: DEBUG
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      incomeAuthService:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+  retry:
+    instances:
+      incomeAuthService:
+        maxAttempts: 3
+        waitDuration: 300ms
+
+feign:
+  circuitbreaker:
+    enabled: true
+

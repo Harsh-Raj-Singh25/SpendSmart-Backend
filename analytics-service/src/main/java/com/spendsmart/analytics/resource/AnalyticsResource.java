@@ -23,6 +23,17 @@ public class AnalyticsResource {
 
 	private final AnalyticsService analyticsService;
 
+	// ── Admin Read-Only Endpoints ──────────────────────────────────────
+	@GetMapping("/admin/snapshots")
+	public ResponseEntity<List<FinancialSnapshot>> getAllSnapshots() {
+		return ResponseEntity.ok(analyticsService.getAllSnapshots());
+	}
+
+	@GetMapping("/admin/snapshots/{snapshotId}")
+	public ResponseEntity<FinancialSnapshot> getSnapshotById(@PathVariable Integer snapshotId) {
+		return ResponseEntity.ok(analyticsService.getSnapshotById(snapshotId));
+	}
+
 	@PostMapping("/user/{userId}/snapshot")
 	public ResponseEntity<FinancialSnapshot> generateSnapshot(@PathVariable Integer userId, @RequestParam int year,
 			@RequestParam int month) {

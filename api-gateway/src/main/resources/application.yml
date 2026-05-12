@@ -11,7 +11,7 @@ spring:
       globalcors: # Global CORS Configuration (Handles CORS for the whole platform)
         cors-configurations:
           '[/**]':
-            allowedOrigins: "${FRONTEND_ORIGIN:http://localhost:4200}"
+            allowedOrigins: "${FRONTEND_ORIGIN:http://localhost:4200/}"
             allowedMethods:
               - GET
               - POST
@@ -94,3 +94,31 @@ springdoc:
         url: /notifications/v3/api-docs
       - name: Payment Service
         url: /payments/v3/api-docs
+
+info:
+  app:
+    name: "Api-Gateway"
+    description: "Api-Gateway layer for SpendSmart Application"
+    version: "1.0.0"
+  author:
+    name: "Harsh Raj Singh"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
+
+jwt:
+  secret: ${JWT_SECRET:CHANGE_ME_IN_ENV}
+

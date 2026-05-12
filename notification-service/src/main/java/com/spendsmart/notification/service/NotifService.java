@@ -6,6 +6,8 @@ import java.util.List;
 public interface NotifService {
 	void send(Notification notification);
 
+	List<Notification> getAllNotifications();
+
 	void sendBudgetAlert(int recipientId, String title, double amount);
 
 	void sendBulk(List<Integer> recipientIds, String title, String message);
@@ -19,6 +21,8 @@ public interface NotifService {
 	List<Notification> getByRecipient(int recipientId);
 
 	int getUnreadCount(int recipientId);
+
+	Notification getNotificationById(int notificationId);
 
 	void deleteNotification(int notificationId);
 

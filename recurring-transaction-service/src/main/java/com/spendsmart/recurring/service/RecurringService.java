@@ -10,6 +10,8 @@ import com.spendsmart.recurring.model.enums.Frequency;
 public interface RecurringService {
 	RecurringTransaction addRecurring(RecurringTransaction transaction);
 
+	List<RecurringTransaction> getAllRecurring();
+
 	List<RecurringTransaction> getByUser(Integer userId);
 
 	Optional<RecurringTransaction> getById(Integer recurringId);

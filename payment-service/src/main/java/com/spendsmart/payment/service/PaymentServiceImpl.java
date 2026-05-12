@@ -22,7 +22,6 @@ import java.util.Locale;
 // RAZORPAY PAYMENT FLOW (3 steps):
 //
 // STEP 1: CREATE ORDER (server-side)
-//   - Our backend creates a Razorpay Order using the Razorpay SDK
 //   - We get back an order_id from Razorpay
 //   - We save it in our Payment table with status "CREATED"
 //   - We return the order_id + amount + keyId to the frontend
@@ -185,20 +184,8 @@ public class PaymentServiceImpl {
 
 			// Step 3c: Call auth-service to upgrade user to PREMIUM
 			// This sets subscriptionType=PREMIUM and premiumExpiresAt=now+30days
-			try {
-				authClient.upgradeToPremium(request.getUserId());
-				log.info("User {} upgraded to PREMIUM", request.getUserId());
-			} catch (Exception feignEx) {
-				// Payment is verified and recorded — but the upgrade call to auth-service
-				// failed (e.g., auth-service is temporarily down or Eureka not ready).
-				// We log a critical alert; an admin/retry job can replay upgrades from
-				// the payments table where status=PAID but user is still FREE.
-				log.error("CRITICAL: Payment PAID (order={}) but auth-service upgrade call FAILED for userId={}. Reason: {}",
-						request.getRazorpayOrderId(), request.getUserId(), feignEx.getMessage());
-				throw new RuntimeException(
-					"Payment was successful but subscription upgrade failed. "
-					+ "Please contact support with your order ID: " + request.getRazorpayOrderId());
-			}
+			authClient.upgradeToPremium(request.getUserId());
+			log.info("User {} upgraded to PREMIUM", request.getUserId());
 
 			return "Payment verified and subscription upgraded to PREMIUM!";
 
@@ -245,16 +232,8 @@ public class PaymentServiceImpl {
 	private String verifyMockPayment(VerifyPaymentRequest request) {
 		log.info("Mock payment verification for order: {}", request.getRazorpayOrderId());
 		updatePaymentStatus(request, "PAID");
-		try {
-			authClient.upgradeToPremium(request.getUserId());
-			log.info("User {} upgraded to PREMIUM via mock payment mode", request.getUserId());
-		} catch (Exception feignEx) {
-			log.error("CRITICAL [MOCK MODE]: Auth-service upgrade call FAILED for userId={}. Reason: {}",
-					request.getUserId(), feignEx.getMessage());
-			throw new RuntimeException(
-				"Mock payment recorded but subscription upgrade failed. "
-				+ "Ensure auth-service is running and registered with Eureka. Order: " + request.getRazorpayOrderId());
-		}
+		authClient.upgradeToPremium(request.getUserId());
+		log.info("User {} upgraded to PREMIUM via mock payment mode", request.getUserId());
 		return "Payment verified in mock mode and subscription upgraded to PREMIUM!";
 	}
 

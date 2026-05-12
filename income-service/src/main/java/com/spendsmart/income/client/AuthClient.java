@@ -14,7 +14,7 @@ import java.util.Map;
 // - FREE users: Max 7 transactions per day (on a per-service basis)
 // - PREMIUM users: Unlimited transactions
 // ============================================================================
-@FeignClient(name = "auth-service")
+@FeignClient(name = "auth-service", fallback = AuthClientFallback.class)
 public interface AuthClient {
 
 	@GetMapping("/auth/subscription/{userId}")

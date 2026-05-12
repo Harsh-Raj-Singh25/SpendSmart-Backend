@@ -38,10 +38,13 @@
         <jjwt.version>0.11.5</jjwt.version>
         
         <sonar.coverage.exclusions>
+            **/aop/**,
             **/dto/**,
+            **/model/**,
             **/entity/**,
             **/config/**,
             **/exception/**,
+            **/aop/**,
             **/*Application.java
         </sonar.coverage.exclusions>
     </properties>

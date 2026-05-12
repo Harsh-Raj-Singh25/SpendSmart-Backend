@@ -4,6 +4,15 @@ server:
 spring:
     application:
         name: expense-service
+    cloud:
+        openfeign:
+            circuitbreaker:
+                enabled: true
+            client:
+                config:
+                    default:
+                        connectTimeout: 2000
+                        readTimeout: 4000
     datasource:
         url: ${EXPENSE_DB_URL:jdbc:mysql://localhost:3306/spendsmart_expense?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true}
         username: ${DB_USERNAME:root}
@@ -32,4 +41,59 @@ eureka:
 springdoc:
   api-docs:
     path: /expenses/v3/api-docs
+
+info:
+  app:
+    name: "Expense-Service"
+    description: "Expense-Service layer for SpendSmart Application"
+    version: "1.0.0"
+  author:
+    name: "Harsh Raj Singh"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
+
+# Enable AOP entry-argument debug logs for local debugging; reduce in production
+logging:
+  level:
+    com.spendsmart.expense.aop: DEBUG
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      expenseAuthService:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+      expenseBudgetService:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+  retry:
+    instances:
+      expenseAuthService:
+        maxAttempts: 3
+        waitDuration: 300ms
+      expenseBudgetService:
+        maxAttempts: 2
+        waitDuration: 300ms
+
+feign:
+  circuitbreaker:
+    enabled: true
 

@@ -76,6 +76,31 @@ class AnalyticsServiceImplTest {
     }
 
     @Test
+    void generateMonthlySnapshot_UpdatesExistingSnapshot() {
+        FinancialSnapshot existing = FinancialSnapshot.builder()
+                .snapshotId(99)
+                .userId(5)
+                .year(2026)
+                .month(4)
+                .period("OLD")
+                .build();
+
+        when(incomeClient.getTotalIncomeByMonth(5, 2026, 4)).thenReturn(new BigDecimal("6000.00"));
+        when(expenseClient.getTotalExpenseByMonth(5, 2026, 4)).thenReturn(new BigDecimal("3500.00"));
+        when(expenseClient.getExpenseBreakdownByCategory(5, 2026, 4)).thenReturn(Map.of("Food", new BigDecimal("3500.00")));
+        when(analyticsRepository.findByUserIdAndYearAndMonth(5, 2026, 4)).thenReturn(Optional.of(existing));
+        when(analyticsRepository.save(any(FinancialSnapshot.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        FinancialSnapshot snapshot = analyticsService.generateMonthlySnapshot(5, 2026, 4);
+
+        assertEquals(99, snapshot.getSnapshotId());
+        assertEquals("MONTHLY", snapshot.getPeriod());
+        assertEquals(new BigDecimal("6000.00"), snapshot.getTotalIncome());
+        assertEquals(new BigDecimal("3500.00"), snapshot.getTotalExpenses());
+        assertEquals(new BigDecimal("2500.00"), snapshot.getNetSavings());
+    }
+
+    @Test
     void getFinancialHealthScore_CalculatesCorrectly() {
         // Arrange
         // Income = 5000, Expense = 2500 -> Savings = 2500 (50%). 
@@ -96,6 +121,18 @@ class AnalyticsServiceImplTest {
 
         // Assert
         assertEquals(54, score);
+    }
+
+    @Test
+    void getFinancialHealthScore_WithZeroIncome_StillReturnsValue() {
+        when(incomeClient.getTotalIncomeByMonth(anyInt(), anyInt(), anyInt())).thenReturn(null);
+        when(expenseClient.getTotalExpenseByMonth(anyInt(), anyInt(), anyInt())).thenReturn(new BigDecimal("750.00"));
+        when(budgetClient.getOverallBudgetAdherence(anyInt())).thenReturn(null);
+
+        Integer score = analyticsService.getFinancialHealthScore(5);
+
+        assertNotNull(score);
+        assertTrue(score >= 0);
     }
 
     @Test
@@ -127,6 +164,27 @@ class AnalyticsServiceImplTest {
     }
 
     @Test
+    void getYearlySummary_WithNoSnapshots_UsesZeroAverage() {
+        when(incomeClient.getTotalIncomeByYear(5, 2026)).thenReturn(new BigDecimal("10500.00"));
+        when(expenseClient.getTotalExpenseByYear(5, 2026)).thenReturn(new BigDecimal("4500.00"));
+        when(analyticsRepository.findByUserIdAndYear(5, 2026)).thenReturn(List.of());
+
+        YearlySummary yearlySummary = analyticsService.getYearlySummary(5, 2026);
+
+        assertEquals(new BigDecimal("6000.00"), yearlySummary.getNetSavings());
+        assertEquals(BigDecimal.ZERO, yearlySummary.getAverageSavingsRate());
+    }
+
+    @Test
+    void getSnapshotById_ThrowsWhenMissing() {
+        when(analyticsRepository.findById(404)).thenReturn(Optional.empty());
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> analyticsService.getSnapshotById(404));
+
+        assertTrue(exception.getMessage().contains("Snapshot not found"));
+    }
+
+    @Test
     void categoryDailyCashflowAndSnapshotHelpers_WorkAsExpected() {
         when(expenseClient.getExpenseBreakdownByCategory(5, 2026, 4))
                 .thenReturn(Map.of("Food", new BigDecimal("400.00"), "Travel", new BigDecimal("900.00")));
@@ -148,6 +206,22 @@ class AnalyticsServiceImplTest {
 
         SnapshotDto snapshotDto = analyticsService.getMonthlySnapshotDto(5, 4, 2026);
         assertEquals(new BigDecimal("4200.00"), snapshotDto.getNetSavings());
+    }
+
+    @Test
+    void helperMethods_HandleEmptyAndNullClientData() {
+        when(expenseClient.getExpenseBreakdownByCategory(5, 2026, 4)).thenReturn(null);
+        assertTrue(analyticsService.getTopSpendingCategories(5, 4).isEmpty());
+
+        when(expenseClient.getDailyExpenseTrend(5, 2026, 4)).thenReturn(null);
+        assertTrue(analyticsService.getDailyExpenseTrend(5, 2026, 4).isEmpty());
+
+        when(incomeClient.getTotalIncomeByMonth(anyInt(), anyInt(), anyInt())).thenReturn(new BigDecimal("1000.00"));
+        when(expenseClient.getTotalExpenseByMonth(anyInt(), anyInt(), anyInt())).thenReturn(new BigDecimal("100.00"));
+
+        Map<String, BigDecimal> cashflow = analyticsService.getCashflowData(5, 4);
+        assertEquals(new BigDecimal("1000.00"), cashflow.get("Inflow"));
+        assertEquals(new BigDecimal("100.00"), cashflow.get("Outflow"));
     }
 
     @Test
@@ -185,5 +259,37 @@ class AnalyticsServiceImplTest {
         Integer healthScore = analyticsService.calculateHealthScore(5, 4);
         assertNotNull(healthScore);
         assertTrue(healthScore >= 0);
+    }
+
+    @Test
+    void calculateCategorySpending_FiltersByMonthAndYear() {
+        ExpenseDto januaryExpense = new ExpenseDto();
+        januaryExpense.setCategoryId(10);
+        januaryExpense.setAmount(new BigDecimal("30.00"));
+        januaryExpense.setDate(LocalDate.of(2026, 1, 10));
+
+        ExpenseDto aprilExpense = new ExpenseDto();
+        aprilExpense.setCategoryId(10);
+        aprilExpense.setAmount(new BigDecimal("70.00"));
+        aprilExpense.setDate(LocalDate.of(2026, 4, 10));
+
+        when(expenseClient.getUserExpenses(5)).thenReturn(List.of(januaryExpense, aprilExpense));
+
+        Map<String, Double> result = analyticsService.calculateCategorySpending(5, 4, 2026);
+
+        assertEquals(70.0, result.get("10"));
+        assertFalse(result.containsKey("20"));
+    }
+
+    @Test
+    void calculate6MonthCashflow_ProducesSixPeriods() {
+        when(incomeClient.getTotalIncomeByMonth(anyInt(), anyInt(), anyInt())).thenReturn(new BigDecimal("2000.00"));
+        when(expenseClient.getTotalExpenseByMonth(anyInt(), anyInt(), anyInt())).thenReturn(new BigDecimal("1000.00"));
+
+        Map<String, Object> result = analyticsService.calculate6MonthCashflow(5, 4, 2026);
+
+        assertEquals(6, ((List<?>) result.get("months")).size());
+        assertEquals(6, ((List<?>) result.get("incomes")).size());
+        assertEquals(6, ((List<?>) result.get("expenses")).size());
     }
 }

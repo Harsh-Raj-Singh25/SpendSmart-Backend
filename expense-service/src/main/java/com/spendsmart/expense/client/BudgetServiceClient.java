@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.math.BigDecimal;
 
 // Tell Feign exactly where the Budget Service lives
-@FeignClient(name = "budget-service")
+@FeignClient(name = "budget-service", fallback = BudgetServiceClientFallback.class)
 public interface BudgetServiceClient {
 
     // This perfectly matches the endpoint we just created in Step 1!

@@ -34,28 +34,25 @@ public class IncomeServiceImpl implements IncomeService {
 		// ── FREEMIUM LIMIT CHECK ────────────────────────────────────────
 		// FREE users can only add 7 incomes per day.
 		// PREMIUM users have unlimited incomes.
-		try {
-			var subscriptionStatus = authClient.getSubscriptionStatus(income.getUserId());
-			String subscriptionType = (String) subscriptionStatus.get("subscriptionType");
+		var subscriptionStatus = authClient.getSubscriptionStatus(income.getUserId());
+		String subscriptionType = (String) subscriptionStatus.getOrDefault("subscriptionType", "PREMIUM");
 
-			if ("FREE".equals(subscriptionType)) {
-				long todayCount = incomeRepository.countByUserIdAndDate(
-						income.getUserId(), java.time.LocalDate.now());
+		if ("FREE".equals(subscriptionType)) {
+			long todayCount = incomeRepository.countByUserIdAndDate(income.getUserId(), java.time.LocalDate.now());
 
-				if (todayCount >= FREE_DAILY_LIMIT) {
-					throw new RuntimeException(
-							"Daily limit reached! FREE users can add up to "
-							+ FREE_DAILY_LIMIT + " incomes per day. "
-							+ "Upgrade to Premium for unlimited access.");
-				}
+			if (todayCount >= FREE_DAILY_LIMIT) {
+				throw new RuntimeException("Daily limit reached! FREE users can add up to " + FREE_DAILY_LIMIT
+						+ " incomes per day. " + "Upgrade to Premium for unlimited access.");
 			}
-		} catch (RuntimeException e) {
-			throw e;
-		} catch (Exception e) {
-			log.warn("Could not check subscription status. Allowing income: {}", e.getMessage());
 		}
 
 		return incomeRepository.save(income);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<Income> getAllIncomes() {
+		return incomeRepository.findAll();
 	}
 
 	@Override

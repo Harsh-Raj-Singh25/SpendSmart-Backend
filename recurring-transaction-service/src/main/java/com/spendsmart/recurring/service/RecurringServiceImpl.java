@@ -38,6 +38,12 @@ public class RecurringServiceImpl implements RecurringService {
 
 	@Override
 	@Transactional(readOnly = true)
+	public List<RecurringTransaction> getAllRecurring() {
+		return recurringRepository.findAll();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
 	public List<RecurringTransaction> getByUser(Integer userId) {
 		return recurringRepository.findByUserId(userId);
 	}

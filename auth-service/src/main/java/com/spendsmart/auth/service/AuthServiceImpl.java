@@ -360,6 +360,22 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
+	public User createUserByAdmin(AdminCreateUserRequest request) {
+		log.info("ADMIN: Creating user with email: {}", request.getEmail());
+		if (userRepository.existsByEmail(request.getEmail())) {
+			throw new BadRequestException("Email already registered");
+		}
+
+		User user = User.builder()
+				.fullName(request.getFullName())
+				.email(request.getEmail())
+				.passwordHash(passwordEncoder.encode(request.getPassword()))
+				.build();
+
+		return userRepository.save(user);
+	}
+
+	@Override
 	public void suspendUser(int userId) {
 		User user = getUserById(userId);
 		user.setActive(false);
@@ -383,6 +399,24 @@ public class AuthServiceImpl implements AuthService {
 		}
 		userRepository.deleteById(userId);
 		log.info("User {} permanently deleted by admin", userId);
+	}
+
+	@Override
+	public void grantPremium(int userId) {
+		User user = getUserById(userId);
+		user.setSubscriptionType(SubscriptionType.PREMIUM);
+		user.setPremiumExpiresAt(LocalDateTime.now().plusDays(30));
+		userRepository.save(user);
+		log.info("ADMIN: User {} granted PREMIUM until {}", userId, user.getPremiumExpiresAt());
+	}
+
+	@Override
+	public void revokePremium(int userId) {
+		User user = getUserById(userId);
+		user.setSubscriptionType(SubscriptionType.FREE);
+		user.setPremiumExpiresAt(null);
+		userRepository.save(user);
+		log.info("ADMIN: User {} revoked PREMIUM", userId);
 	}
 
 	// SUBSCRIPTION MANAGEMENT — Freemium model

@@ -31,6 +31,12 @@ public class CategoryServiceImpl implements CategoryService {
 
 	@Override
 	@Transactional(readOnly = true)
+	public List<Category> getAllCategories() {
+		return categoryRepository.findAll();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
 	public List<Category> getByUserId(Integer userId) {
 		return categoryRepository.findByUserId(userId);
 	}

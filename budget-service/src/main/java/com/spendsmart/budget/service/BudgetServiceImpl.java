@@ -18,12 +18,12 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-//@Slf4j
+@Slf4j
 @Transactional
 public class BudgetServiceImpl implements BudgetService {
 
 	private final BudgetRepository budgetRepository;
-	Logger log=new Logger();
+//	private static final Logger logger = LoggerFactory.getLogger(MyService.class);
 	@Override
 	public Budget createBudget(Budget budget) {
 		log.info("Creating budget for user: {} and category: {}", budget.getUserId(), budget.getCategoryId());
@@ -34,6 +34,12 @@ public class BudgetServiceImpl implements BudgetService {
 			throw new RuntimeException("An active budget already exists for this category.");
 		}
 		return budgetRepository.save(budget);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<Budget> getAllBudgets() {
+		return budgetRepository.findAll();
 	}
 
 	@Override

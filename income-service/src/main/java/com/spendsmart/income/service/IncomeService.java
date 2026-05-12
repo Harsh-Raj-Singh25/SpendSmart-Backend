@@ -10,6 +10,8 @@ import java.util.List;
 public interface IncomeService {
 	Income addIncome(Income income);
 
+	List<Income> getAllIncomes();
+
 	Income getIncomeById(Integer incomeId);
 
 	List<Income> getIncomesByUser(Integer userId);

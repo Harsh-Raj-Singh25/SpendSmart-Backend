@@ -46,3 +46,33 @@ eureka:
 springdoc:
   api-docs:
     path: /notifications/v3/api-docs
+
+info:
+  app:
+    name: "Notification-Service"
+    description: "Notification-Service layer for SpendSmart Application"
+    version: "1.0.0"
+  author:
+    name: "Harsh Raj Singh"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
+
+# Enable AOP entry-argument debug logs for local debugging; reduce in production
+logging:
+  level:
+    com.spendsmart.notification.aop: DEBUG
+

@@ -35,6 +35,17 @@ public class ExpenseResource {
 		return new ResponseEntity<>(expenseService.addExpense(expense), HttpStatus.CREATED);
 	}
 
+	// ── Admin Read-Only Endpoints ──────────────────────────────────────
+	@GetMapping("/admin")
+	public ResponseEntity<List<Expense>> getAllExpenses() {
+		return ResponseEntity.ok(expenseService.getAllExpenses());
+	}
+
+	@GetMapping("/admin/{expenseId}")
+	public ResponseEntity<Expense> getExpenseByIdAdmin(@PathVariable Long expenseId) {
+		return ResponseEntity.ok(expenseService.getExpenseById(expenseId));
+	}
+
 	@GetMapping("/{expenseId}")
 	public ResponseEntity<Expense> getExpenseById(@PathVariable Long expenseId) {
 		return ResponseEntity.ok(expenseService.getExpenseById(expenseId));

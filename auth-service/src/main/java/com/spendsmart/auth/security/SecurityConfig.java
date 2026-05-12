@@ -66,7 +66,10 @@ public class SecurityConfig {
 						.requestMatchers("/auth/subscription/**").permitAll()
 						// Internal service-to-service endpoint used by notification-service
 						.requestMatchers("/auth/internal/**").permitAll()
-
+						
+						// Actuator
+						.requestMatchers("/actuator/**").permitAll()
+						
 						// ── EVERYTHING ELSE — requires valid JWT ────────────
 						.anyRequest().authenticated())
 

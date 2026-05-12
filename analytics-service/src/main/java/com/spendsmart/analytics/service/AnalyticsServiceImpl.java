@@ -60,6 +60,17 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         return analyticsRepository.save(snapshot);
     }
 
+    @Override
+    public List<FinancialSnapshot> getAllSnapshots() {
+        return analyticsRepository.findAll();
+    }
+
+    @Override
+    public FinancialSnapshot getSnapshotById(Integer snapshotId) {
+        return analyticsRepository.findById(snapshotId)
+                .orElseThrow(() -> new RuntimeException("Snapshot not found with ID: " + snapshotId));
+    }
+
     // ========================================================================
     // --- 2. EXISTING SUMMARIES, BREAKDOWNS & TRENDS (Undisturbed) ---
     // ========================================================================

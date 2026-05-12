@@ -39,7 +39,7 @@ public class AdminSeeder implements CommandLineRunner {
 	// This method runs automatically after Spring Boot starts up
 	@Override
 	public void run(String... args) {
-		String adminEmail = "admin@spendsmart.com";
+		String adminEmail = "admin@spendsmart1.com";
 
 		// Only create if the admin doesn't already exist
 		if (!userRepository.existsByEmail(adminEmail)) {

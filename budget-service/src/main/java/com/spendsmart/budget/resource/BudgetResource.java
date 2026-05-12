@@ -3,6 +3,8 @@ package com.spendsmart.budget.resource;
 import com.spendsmart.budget.entity.Budget;
 import com.spendsmart.budget.model.dto.BudgetProgress;
 import com.spendsmart.budget.service.BudgetService;
+
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,17 +12,36 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
-
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 @RestController
 @RequestMapping("/budgets")
 @RequiredArgsConstructor
 public class BudgetResource {
 
 	private final BudgetService budgetService;
-
+	@Operation(summary = "Create a new budget", description = "Creates a new budget for a specific user and category.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Budget successfully created"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or missing required fields"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
 	@PostMapping
 	public ResponseEntity<Budget> createBudget(@RequestBody Budget budget) {
 		return new ResponseEntity<>(budgetService.createBudget(budget), HttpStatus.CREATED);
+	}
+
+	// ── Admin Read-Only Endpoints ──────────────────────────────────────
+	@GetMapping("/admin")
+	public ResponseEntity<List<Budget>> getAllBudgets() {
+		return ResponseEntity.ok(budgetService.getAllBudgets());
+	}
+
+	@GetMapping("/admin/{budgetId}")
+	public ResponseEntity<Budget> getBudgetByIdAdmin(@PathVariable Integer budgetId) {
+		return budgetService.getBudgetById(budgetId).map(ResponseEntity::ok)
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	@GetMapping("/{budgetId}")

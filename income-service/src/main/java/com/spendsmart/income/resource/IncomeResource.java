@@ -25,6 +25,17 @@ public class IncomeResource {
 		return new ResponseEntity<>(incomeService.addIncome(income), HttpStatus.CREATED);
 	}
 
+	// ── Admin Read-Only Endpoints ──────────────────────────────────────
+	@GetMapping("/admin")
+	public ResponseEntity<List<Income>> getAllIncomes() {
+		return ResponseEntity.ok(incomeService.getAllIncomes());
+	}
+
+	@GetMapping("/admin/{incomeId}")
+	public ResponseEntity<Income> getIncomeByIdAdmin(@PathVariable Integer incomeId) {
+		return ResponseEntity.ok(incomeService.getIncomeById(incomeId));
+	}
+
 	@GetMapping("/{incomeId}")
 	public ResponseEntity<Income> getIncomeById(@PathVariable Integer incomeId) {
 		return ResponseEntity.ok(incomeService.getIncomeById(incomeId));

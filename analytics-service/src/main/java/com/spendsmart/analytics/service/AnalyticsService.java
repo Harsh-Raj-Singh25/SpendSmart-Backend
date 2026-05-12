@@ -14,6 +14,10 @@ public interface AnalyticsService {
 
 	FinancialSnapshot generateMonthlySnapshot(Integer userId, int year, int month);
 
+	List<FinancialSnapshot> getAllSnapshots();
+
+	FinancialSnapshot getSnapshotById(Integer snapshotId);
+
 	Integer getFinancialHealthScore(Integer userId);
 
 	BigDecimal getSpendingForecast(Integer userId);

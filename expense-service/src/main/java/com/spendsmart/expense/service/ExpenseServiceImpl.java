@@ -48,36 +48,25 @@ public class ExpenseServiceImpl implements ExpenseService {
 		if (expense.getDate() == null) {
 		    expense.setDate(LocalDate.now()); // Default to today if missing
 		}
-		try {
-			var subscriptionStatus = authClient.getSubscriptionStatus(expense.getUserId());
-			String subscriptionType = (String) subscriptionStatus.get("subscriptionType");
+		var subscriptionStatus = authClient.getSubscriptionStatus(expense.getUserId());
+		String subscriptionType = (String) subscriptionStatus.getOrDefault("subscriptionType", "PREMIUM");
 
-			if ("FREE".equals(subscriptionType)) {
-				// Count how many expenses this user already has today
-				long todayCount = expenseRepository.countByUserIdAndDate(expense.getUserId(), LocalDate.now());
+		if ("FREE".equals(subscriptionType)) {
+			// Count how many expenses this user already has today
+			long todayCount = expenseRepository.countByUserIdAndDate(expense.getUserId(), LocalDate.now());
 
-				if (todayCount >= FREE_DAILY_LIMIT) {
-					throw new IllegalStateException("Daily limit reached! FREE users can add up to " + FREE_DAILY_LIMIT
-							+ " expenses per day. " + "Upgrade to Premium for unlimited access.");
-				}
+			if (todayCount >= FREE_DAILY_LIMIT) {
+				throw new IllegalStateException("Daily limit reached! FREE users can add up to " + FREE_DAILY_LIMIT
+						+ " expenses per day. " + "Upgrade to Premium for unlimited access.");
 			}
-		} catch (IllegalStateException e) {
-			throw e; // Re-throw our limit exceeded exception
-		} catch (Exception e) {
-			// If auth-service is down, allow the expense (graceful degradation)
-			log.warn("Could not check subscription status. Allowing expense: {}", e.getMessage());
 		}
 
 		Expense savedExpense = expenseRepository.save(expense);
 
 		// ── SYNC WITH BUDGET SERVICE (Synchronous) ──────────────────────
-		try {
-			budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), savedExpense.getCategoryId(),
-					savedExpense.getAmount());
-			log.info("Successfully updated budget for category: {}", savedExpense.getCategoryId());
-		} catch (Exception e) {
-			log.error("Failed to update budget. Budget Service might be down: {}", e.getMessage());
-		}
+		budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), savedExpense.getCategoryId(),
+				savedExpense.getAmount());
+		log.info("Budget sync call executed for category: {}", savedExpense.getCategoryId());
 
 		// ── FIRE EVENT TO RABBITMQ (Asynchronous) ───────────────────────
 		try {
@@ -95,6 +84,12 @@ public class ExpenseServiceImpl implements ExpenseService {
 		}
 
 		return savedExpense;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<Expense> getAllExpenses() {
+		return expenseRepository.findAll();
 	}
 
 	@Override
@@ -167,25 +162,19 @@ public class ExpenseServiceImpl implements ExpenseService {
 
 		Expense savedExpense = expenseRepository.save(existingExpense); 
 		// Sync with Budget Service
-		try {
-			if (!oldCategoryId.equals(savedExpense.getCategoryId())) {
-				// Scenario A: The user changed the category of the expense!
-				// 1. Refund the old budget
-				budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), oldCategoryId,
-						oldAmount.negate());
-				// 2. Charge the new budget
-				budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), savedExpense.getCategoryId(),
-						savedExpense.getAmount());
-				log.info("Cross-category budget sync completed.");
-			} else if (oldAmount.compareTo(savedExpense.getAmount()) != 0) {
-				// Scenario B: The category is the same, but the amount changed
-				BigDecimal difference = savedExpense.getAmount().subtract(oldAmount);
-				budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), savedExpense.getCategoryId(),
-						difference);
-				log.info("Budget sync completed. Amount adjusted by: {}", difference);
-			}
-		} catch (Exception e) {
-			log.error("Failed to sync budget during expense update. Budget service might be down: {}", e.getMessage());
+		if (!oldCategoryId.equals(savedExpense.getCategoryId())) {
+			// Scenario A: The user changed the category of the expense!
+			// 1. Refund the old budget
+			budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), oldCategoryId, oldAmount.negate());
+			// 2. Charge the new budget
+			budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), savedExpense.getCategoryId(),
+					savedExpense.getAmount());
+			log.info("Cross-category budget sync completed.");
+		} else if (oldAmount.compareTo(savedExpense.getAmount()) != 0) {
+			// Scenario B: The category is the same, but the amount changed
+			BigDecimal difference = savedExpense.getAmount().subtract(oldAmount);
+			budgetServiceClient.updateSpentAmountByCategory(savedExpense.getUserId(), savedExpense.getCategoryId(), difference);
+			log.info("Budget sync completed. Amount adjusted by: {}", difference);
 		}
 
 		return savedExpense;
@@ -199,15 +188,10 @@ public class ExpenseServiceImpl implements ExpenseService {
 		expenseRepository.deleteByExpenseId(expenseId);
 
 		// Sync with Budget Service by sending a negative amount (Refund)
-		try {
-			budgetServiceClient.updateSpentAmountByCategory(existingExpense.getUserId(),
-					existingExpense.getCategoryId(), existingExpense.getAmount().negate() // .negate() turns 500 into
-																							// -500
-			);
-			log.info("Successfully refunded budget for deleted expense.");
-		} catch (Exception e) {
-			log.error("Failed to refund budget. Budget service might be down: {}", e.getMessage());
-		}
+		budgetServiceClient.updateSpentAmountByCategory(existingExpense.getUserId(), existingExpense.getCategoryId(),
+				existingExpense.getAmount().negate() // .negate() turns 500 into -500
+		);
+		log.info("Budget refund call executed for deleted expense.");
 	}
 
 	@Override

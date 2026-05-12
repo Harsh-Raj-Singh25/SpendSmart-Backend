@@ -16,6 +16,16 @@ public class NotifResource {
 	private final NotifService notifService;
 
 	// Standard retrieval
+	@GetMapping("/admin")
+	public ResponseEntity<List<Notification>> getAllNotifications() {
+		return ResponseEntity.ok(notifService.getAllNotifications());
+	}
+
+	@GetMapping("/admin/{notificationId}")
+	public ResponseEntity<Notification> getNotificationByIdAdmin(@PathVariable int notificationId) {
+		return ResponseEntity.ok(notifService.getNotificationById(notificationId));
+	}
+
 	@GetMapping("/recipient/{recipientId}")
 	public ResponseEntity<List<Notification>> getByRecipient(@PathVariable int recipientId) {
 		return ResponseEntity.ok(notifService.getByRecipient(recipientId));

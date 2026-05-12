@@ -11,6 +11,8 @@ import com.spendsmart.expense.model.enums.ExpenseType;
 public interface ExpenseService {
 	Expense addExpense(Expense expense);
 
+	List<Expense> getAllExpenses();
+
 	Expense getExpenseById(Long expenseId);
 
 	List<Expense> getExpensesByUser(Integer userId);

@@ -59,6 +59,9 @@ public interface AuthService {
 	// Returns { "total": <count>, "active": <count> } for admin KPIs
 	Map<String, Long> getUserCount();
 
+	// Admin-only user creation (does not log in the user)
+	User createUserByAdmin(AdminCreateUserRequest request);
+
 	// Soft-deletes a user (sets isActive = false) — admin version of deactivateAccount
 	void suspendUser(int userId);
 
@@ -67,6 +70,11 @@ public interface AuthService {
 
 	// HARD deletes the user record from the database — irreversible
 	void deleteUser(int userId);
+
+	// Admin-only subscription controls
+	void grantPremium(int userId);
+
+	void revokePremium(int userId);
 
 	// ── Google OAuth ───────────────────────────────────────────────────
 	// Verifies a Google ID token and returns JWT (find-or-create user)

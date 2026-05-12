@@ -23,6 +23,17 @@ public class CategoryResource {
 		return new ResponseEntity<>(categoryService.createCategory(category), HttpStatus.CREATED);
 	}
 
+	// ── Admin Read-Only Endpoints ──────────────────────────────────────
+	@GetMapping("/admin")
+	public ResponseEntity<List<Category>> getAllCategories() {
+		return ResponseEntity.ok(categoryService.getAllCategories());
+	}
+
+	@GetMapping("/admin/{categoryId}")
+	public ResponseEntity<Category> getCategoryByIdAdmin(@PathVariable Integer categoryId) {
+		return ResponseEntity.ok(categoryService.getCategoryById(categoryId));
+	}
+
 	@GetMapping("/user/{userId}")
 	public ResponseEntity<List<Category>> getByUserId(@PathVariable Integer userId) {
 		return ResponseEntity.ok(categoryService.getByUserId(userId));

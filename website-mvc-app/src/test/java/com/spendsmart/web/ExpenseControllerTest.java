@@ -70,6 +70,31 @@ class ExpenseControllerTest {
     }
 
     @Test
+    void viewDashboard_LimitsRecentTransactionsToFive() {
+        SnapshotDto snapshot = new SnapshotDto();
+        snapshot.setTotalIncome(new BigDecimal("9000.00"));
+        snapshot.setTotalExpenses(new BigDecimal("4000.00"));
+        snapshot.setNetSavings(new BigDecimal("5000.00"));
+
+        List<TransactionDto> expenses = List.of(
+                buildExpense("One"),
+                buildExpense("Two"),
+                buildExpense("Three"),
+                buildExpense("Four"),
+                buildExpense("Five"),
+                buildExpense("Six")
+        );
+
+        when(analyticsClient.getMonthlySnapshot(eq(5), anyInt(), anyInt())).thenReturn(snapshot);
+        when(expenseClient.getUserExpenses(5)).thenReturn(expenses);
+        when(notificationClient.getUnreadCount(5)).thenReturn(0);
+
+        ModelAndView result = expenseController.viewDashboard();
+
+        assertEquals(5, ((List<?>) result.getModel().get("recentTransactions")).size());
+    }
+
+    @Test
     void formAndViewEndpointsWorkAsExpected() {
         TransactionDto expenseForm = new TransactionDto();
         expenseForm.setTitle("Coffee");
@@ -119,5 +144,11 @@ class ExpenseControllerTest {
         assertEquals("redirect:/app/dashboard", expenseController.setBudget().getViewName());
         assertEquals("notifications", expenseController.viewNotifications().getViewName());
         assertEquals("redirect:/app/login", expenseController.logout());
+    }
+
+    private TransactionDto buildExpense(String title) {
+        TransactionDto transaction = new TransactionDto();
+        transaction.setTitle(title);
+        return transaction;
     }
 }

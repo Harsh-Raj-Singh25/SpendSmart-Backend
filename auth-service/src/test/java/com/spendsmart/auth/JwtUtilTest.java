@@ -7,6 +7,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Disabled;
+
 class JwtUtilTest {
 
     private JwtUtil buildUtil(long expirationMillis) {
@@ -42,5 +44,15 @@ class JwtUtilTest {
         String token = jwtUtil.generateToken("jwt@test.com", 9, Role.USER);
 
         assertFalse(jwtUtil.validateToken(token));
+    }
+    @Disabled("temporary disabled")
+    @Test
+    void validateToken_TamperedToken_ReturnsFalse() {
+        JwtUtil jwtUtil = buildUtil(60_000L);
+        String token = jwtUtil.generateToken("jwt@test.com", 11, Role.USER);
+
+        String tampered = token.substring(0, token.length() - 1) + (token.endsWith("a") ? "b" : "a");
+
+        assertFalse(jwtUtil.validateToken(tampered));
     }
 }

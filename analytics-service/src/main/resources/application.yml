@@ -27,3 +27,33 @@ eureka:
 springdoc:
   api-docs:
     path: /analytics/v3/api-docs
+
+info:
+  app:
+    name: "Analytics-Service"
+    description: "Analytics-Service layer for SpendSmart Application"
+    version: "1.0.0"
+  author:
+    name: "Harsh Raj Singh"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
+
+# Enable AOP entry-argument debug logs for local debugging; reduce in production
+logging:
+  level:
+    com.spendsmart.analytics.aop: DEBUG
+

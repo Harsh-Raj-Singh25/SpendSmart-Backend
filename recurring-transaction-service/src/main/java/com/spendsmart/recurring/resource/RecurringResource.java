@@ -21,6 +21,18 @@ public class RecurringResource {
 		return new ResponseEntity<>(recurringService.addRecurring(transaction), HttpStatus.CREATED);
 	}
 
+	// ── Admin Read-Only Endpoints ──────────────────────────────────────
+	@GetMapping("/admin")
+	public ResponseEntity<List<RecurringTransaction>> getAllRecurring() {
+		return ResponseEntity.ok(recurringService.getAllRecurring());
+	}
+
+	@GetMapping("/admin/{id}")
+	public ResponseEntity<RecurringTransaction> getByIdAdmin(@PathVariable Integer id) {
+		return recurringService.getById(id).map(ResponseEntity::ok)
+				.orElse(ResponseEntity.notFound().build());
+	}
+
 	@GetMapping("/user/{userId}")
 	public ResponseEntity<List<RecurringTransaction>> getByUser(@PathVariable Integer userId) {
 		return ResponseEntity.ok(recurringService.getByUser(userId));

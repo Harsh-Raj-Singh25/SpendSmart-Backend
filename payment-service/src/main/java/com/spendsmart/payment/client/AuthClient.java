@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 //   Setting url = AUTH_SERVICE_URL lets Feign resolve the target directly
 //   (localhost:8081 in dev) while still using the Eureka name as identifier.
 // ============================================================================
-@FeignClient(name = "auth-service", url = "${AUTH_SERVICE_URL:http://localhost:8081}")
+@FeignClient(name = "auth-service", url = "${AUTH_SERVICE_URL:http://localhost:8081}", fallback = AuthClientFallback.class)
 public interface AuthClient {
 
 	// Upgrades user to PREMIUM subscription (30 days from now).

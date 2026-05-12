@@ -17,7 +17,7 @@ import java.util.Map;
 // This Feign call is made BEFORE saving the expense in addExpense().
 // If the user is FREE and has hit 7 expenses today → 403 Forbidden.
 // ============================================================================
-@FeignClient(name = "auth-service")
+@FeignClient(name = "auth-service", fallback = AuthClientFallback.class)
 public interface AuthClient {
 
 	// Gets the user's subscription: { "subscriptionType": "FREE", "premiumExpiresAt": null }

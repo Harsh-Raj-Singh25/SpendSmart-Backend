@@ -1,10 +1,12 @@
 package com.spendsmart.auth.resource;
 
+import com.spendsmart.auth.dto.AdminCreateUserRequest;
 import com.spendsmart.auth.entity.User;
 import com.spendsmart.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,6 +40,14 @@ public class AdminResource {
 	public ResponseEntity<List<User>> getAllUsers() {
 		log.info("ADMIN: Fetching all users");
 		return ResponseEntity.ok(authService.getAllUsers());
+	}
+
+	// ── Create User ─────────────────────────────────────────────────────
+	// Admin can create a new standard user account (USER role).
+	@PostMapping("/users")
+	public ResponseEntity<User> createUser(@Valid @RequestBody AdminCreateUserRequest request) {
+		log.info("ADMIN: Creating user account for email: {}", request.getEmail());
+		return ResponseEntity.ok(authService.createUserByAdmin(request));
 	}
 
 	// ── List Active Users Only ──────────────────────────────────────────
@@ -97,6 +107,22 @@ public class AdminResource {
 	public ResponseEntity<Void> deleteUser(@PathVariable int userId) {
 		log.info("ADMIN: Permanently deleting user with ID: {}", userId);
 		authService.deleteUser(userId);
+		return ResponseEntity.ok().build();
+	}
+
+	// ── Grant Premium ───────────────────────────────────────────────────
+	@PutMapping("/users/{userId}/premium")
+	public ResponseEntity<Void> grantPremium(@PathVariable int userId) {
+		log.info("ADMIN: Granting PREMIUM to user with ID: {}", userId);
+		authService.grantPremium(userId);
+		return ResponseEntity.ok().build();
+	}
+
+	// ── Revoke Premium ──────────────────────────────────────────────────
+	@DeleteMapping("/users/{userId}/premium")
+	public ResponseEntity<Void> revokePremium(@PathVariable int userId) {
+		log.info("ADMIN: Revoking PREMIUM for user with ID: {}", userId);
+		authService.revokePremium(userId);
 		return ResponseEntity.ok().build();
 	}
 }

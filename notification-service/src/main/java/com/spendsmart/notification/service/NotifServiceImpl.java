@@ -31,6 +31,12 @@ public class NotifServiceImpl implements NotifService {
 	private String senderEmail;
 
 	@Override
+	@Transactional(readOnly = true)
+	public List<Notification> getAllNotifications() {
+		return notificationRepository.findAll();
+	}
+
+	@Override
 	public void send(Notification notification) {
 		log.info("Saving new {} notification for Recipient ID: {}", notification.getSeverity(),
 				notification.getRecipientId());
@@ -132,6 +138,13 @@ public class NotifServiceImpl implements NotifService {
 	@Transactional(readOnly = true)
 	public int getUnreadCount(int recipientId) {
 		return notificationRepository.countByRecipientIdAndIsRead(recipientId, false);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Notification getNotificationById(int notificationId) {
+		return notificationRepository.findById(notificationId)
+				.orElseThrow(() -> new RuntimeException("Notification not found with ID: " + notificationId));
 	}
 
 	@Override
