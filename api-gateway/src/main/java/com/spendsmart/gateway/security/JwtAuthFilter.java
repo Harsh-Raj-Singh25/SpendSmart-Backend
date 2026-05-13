@@ -37,7 +37,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 			"/actuator"
 	);
 
-	@Value("${jwt.secret:CHANGE_ME_IN_ENV}")
+	@Value("${jwt.secret:IN_ENV}")
 	private String secret;
 
 	@Override

@@ -22,6 +22,11 @@ public class CategoryServiceImpl implements CategoryService {
 	@Override
 	public Category createCategory(Category category) {
 		log.info("Creating new category for user: {}", category.getUserId());
+
+		// Ensure non-default categories are marked explicitly to avoid DB null constraint
+		if (category.getIsDefault() == null) {
+			category.setIsDefault(false);
+		}
 		// Prevent duplicate names for the same user
 		if (categoryRepository.findByUserIdAndName(category.getUserId(), category.getName()).isPresent()) {
 			throw new RuntimeException("Category with this name already exists for the user.");

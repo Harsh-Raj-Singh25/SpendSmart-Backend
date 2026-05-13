@@ -18,6 +18,8 @@ public interface BudgetRepository extends JpaRepository<Budget, Integer> {
 
 	Optional<Budget> findByUserIdAndCategoryId(Integer userId, Integer categoryId);
 
+	Optional<Budget> findByUserIdAndCategoryIdAndName(Integer userId, Integer categoryId, String name);
+
 	List<Budget> findByPeriod(BudgetPeriod period);
 
 	List<Budget> findByIsActive(Boolean isActive);

@@ -44,9 +44,14 @@
             **/entity/**,
             **/config/**,
             **/exception/**,
-            **/aop/**,
             **/*Application.java
         </sonar.coverage.exclusions>
+        <sonar.cpd.exclusions>
+            **/aop/**
+        </sonar.cpd.exclusions>
+        <sonar.exclusions>
+            **/aop/**
+        </sonar.exclusions>
     </properties>
 
     <dependencyManagement>
@@ -87,6 +92,11 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/aop/**</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

@@ -27,11 +27,13 @@ public class BudgetServiceImpl implements BudgetService {
 	@Override
 	public Budget createBudget(Budget budget) {
 		log.info("Creating budget for user: {} and category: {}", budget.getUserId(), budget.getCategoryId());
-		// Check if active budget already exists for this category
-		Optional<Budget> existing = budgetRepository.findByUserIdAndCategoryId(budget.getUserId(),
-				budget.getCategoryId());
+		// Check if budget with same name already exists for this category
+		Optional<Budget> existing = budgetRepository.findByUserIdAndCategoryIdAndName(
+				budget.getUserId(),
+				budget.getCategoryId(),
+				budget.getName());
 		if (existing.isPresent() && existing.get().getIsActive()) {
-			throw new RuntimeException("An active budget already exists for this category.");
+			throw new RuntimeException("A budget with name '" + budget.getName() + "' already exists for this category.");
 		}
 		return budgetRepository.save(budget);
 	}
