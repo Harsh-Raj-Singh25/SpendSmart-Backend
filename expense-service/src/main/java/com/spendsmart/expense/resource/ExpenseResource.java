@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.spendsmart.expense.entity.Expense;
 import com.spendsmart.expense.model.enums.ExpenseType;
 import com.spendsmart.expense.service.ExpenseService;
@@ -31,7 +33,7 @@ public class ExpenseResource {
 	private final ExpenseService expenseService;
 
 	@PostMapping
-	public ResponseEntity<Expense> addExpense(@RequestBody Expense expense) {
+	public ResponseEntity<Expense> addExpense(@Valid @RequestBody Expense expense) {
 		return new ResponseEntity<>(expenseService.addExpense(expense), HttpStatus.CREATED);
 	}
 
@@ -80,7 +82,7 @@ public class ExpenseResource {
 	}
 
 	@PutMapping("/{expenseId}")
-	public ResponseEntity<Expense> updateExpense(@PathVariable Long expenseId, @RequestBody Expense expense) {
+	public ResponseEntity<Expense> updateExpense(@PathVariable Long expenseId, @Valid @RequestBody Expense expense) {
 		return ResponseEntity.ok(expenseService.updateExpense(expenseId, expense));
 	}
 

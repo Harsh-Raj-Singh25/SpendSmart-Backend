@@ -7,6 +7,8 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "categories")
@@ -22,13 +24,16 @@ public class Category {
     private Integer categoryId;
 
     @Column(nullable = false)
+    @NotNull(message = "User ID cannot be null")
     private Integer userId;
 
     @Column(nullable = false)
+    @NotBlank(message = "Category name cannot be blank")
     private String name;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @NotNull(message = "Category type cannot be null")
     private CategoryType type;
 
     @Column(length = 50)

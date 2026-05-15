@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -28,7 +29,7 @@ public class BudgetResource {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
 	@PostMapping
-	public ResponseEntity<Budget> createBudget(@RequestBody Budget budget) {
+	public ResponseEntity<Budget> createBudget(@Valid @RequestBody Budget budget) {
 		return new ResponseEntity<>(budgetService.createBudget(budget), HttpStatus.CREATED);
 	}
 
@@ -60,7 +61,7 @@ public class BudgetResource {
 	}
 
 	@PutMapping("/{budgetId}")
-	public ResponseEntity<Budget> update(@PathVariable Integer budgetId, @RequestBody Budget budget) {
+	public ResponseEntity<Budget> update(@PathVariable Integer budgetId, @Valid @RequestBody Budget budget) {
 		return ResponseEntity.ok(budgetService.updateBudget(budgetId, budget));
 	}
 

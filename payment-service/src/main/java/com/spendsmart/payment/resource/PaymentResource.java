@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class PaymentResource {
 	// Called when user clicks "Upgrade to Premium"
 	// Returns order details that the frontend uses to open Razorpay Checkout
 	@PostMapping("/create-order")
-	public ResponseEntity<CreateOrderResponse> createOrder(@RequestBody CreateOrderRequest request) {
+	public ResponseEntity<CreateOrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
 		log.info("POST /payments/create-order for user: {}", request.getUserId());
 		return ResponseEntity.ok(paymentService.createOrder(request));
 	}
@@ -58,7 +59,7 @@ public class PaymentResource {
 	// Called after user completes payment in Razorpay popup
 	// Verifies signature, updates payment status, upgrades subscription
 	@PostMapping("/verify")
-	public ResponseEntity<Map<String, String>> verifyPayment(@RequestBody VerifyPaymentRequest request) {
+	public ResponseEntity<Map<String, String>> verifyPayment(@Valid @RequestBody VerifyPaymentRequest request) {
 		log.info("POST /payments/verify for order: {}", request.getRazorpayOrderId());
 		String message = paymentService.verifyPayment(request);
 		return ResponseEntity.ok(Map.of("message", message));

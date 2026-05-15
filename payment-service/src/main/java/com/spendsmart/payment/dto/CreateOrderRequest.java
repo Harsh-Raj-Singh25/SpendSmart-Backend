@@ -1,6 +1,7 @@
 package com.spendsmart.payment.dto;
 
 import lombok.Data;
+import jakarta.validation.constraints.NotNull;
 
 // ============================================================================
 // DTO — Request body for creating a Razorpay Order.
@@ -8,5 +9,6 @@ import lombok.Data;
 // ============================================================================
 @Data
 public class CreateOrderRequest {
+	@NotNull(message = "User ID cannot be null")
 	private Integer userId; // Which user wants to pay
 }

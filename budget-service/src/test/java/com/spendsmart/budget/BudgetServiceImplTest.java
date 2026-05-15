@@ -95,7 +95,7 @@ class BudgetServiceImplTest {
 
     @Test
     void createBudget_WhenNoActiveExisting_SavesBudget() {
-        when(budgetRepository.findByUserIdAndCategoryId(1, 101)).thenReturn(Optional.empty());
+        when(budgetRepository.findByUserIdAndCategoryIdAndName(1, 101, "Groceries")).thenReturn(Optional.empty());
         when(budgetRepository.save(mockBudget)).thenReturn(mockBudget);
 
         Budget created = budgetService.createBudget(mockBudget);
@@ -106,17 +106,17 @@ class BudgetServiceImplTest {
 
     @Test
     void createBudget_WhenActiveBudgetExists_ThrowsException() {
-        when(budgetRepository.findByUserIdAndCategoryId(1, 101)).thenReturn(Optional.of(mockBudget));
+        when(budgetRepository.findByUserIdAndCategoryIdAndName(1, 101, "Groceries")).thenReturn(Optional.of(mockBudget));
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> budgetService.createBudget(mockBudget));
-        assertTrue(exception.getMessage().contains("active budget"));
+        assertTrue(exception.getMessage().contains("already exists"));
         verify(budgetRepository, never()).save(any(Budget.class));
     }
 
     @Test
     void createBudget_WhenExistingInactive_SavesBudget() {
         mockBudget.setIsActive(false);
-        when(budgetRepository.findByUserIdAndCategoryId(1, 101)).thenReturn(Optional.of(mockBudget));
+        when(budgetRepository.findByUserIdAndCategoryIdAndName(1, 101, "Groceries")).thenReturn(Optional.of(mockBudget));
         when(budgetRepository.save(mockBudget)).thenReturn(mockBudget);
 
         Budget created = budgetService.createBudget(mockBudget);

@@ -20,5 +20,6 @@ public class GoogleAuthRequest {
 	// The ID token returned by Google Sign-In SDK on the frontend.
 	// This is NOT an access token — it's a JWT containing the user's
 	// email, name, and profile picture, signed by Google's servers.
+	@jakarta.validation.constraints.NotBlank(message = "ID token is required")
 	private String idToken;
 }

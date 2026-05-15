@@ -9,6 +9,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
 @Entity
 @Table(name = "incomes")
 @Getter
@@ -23,26 +27,34 @@ public class Income {
     private Integer incomeId;
 
     @Column(nullable = false)
+    @NotNull(message = "User ID cannot be null")
     private Integer userId;
 
     @Column(nullable = false)
+    @NotNull(message = "Category ID cannot be null")
     private Integer categoryId;
 
     @Column(nullable = false)
+    @NotBlank(message = "Title cannot be blank")
     private String title;
 
     @Column(nullable = false, precision = 12, scale = 2)
+    @NotNull(message = "Amount cannot be null")
+    @Positive(message = "Amount must be positive")
     private BigDecimal amount;
 
     @Column(length = 3)
     @Builder.Default
+    @NotBlank(message = "Currency cannot be blank")
     private String currency = "INR";
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @NotNull(message = "Source cannot be null")
     private IncomeSource source;
 
     @Column(nullable = false)
+    @NotNull(message = "Date cannot be null")
     private LocalDate date;
 
     @Column(length = 500)

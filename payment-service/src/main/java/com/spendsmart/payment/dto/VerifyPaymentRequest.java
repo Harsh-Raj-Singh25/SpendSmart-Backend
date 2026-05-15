@@ -1,6 +1,8 @@
 package com.spendsmart.payment.dto;
 
 import lombok.Data;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 // ============================================================================
 // DTO — Request body for verifying a Razorpay payment.
@@ -15,8 +17,15 @@ import lombok.Data;
 // ============================================================================
 @Data
 public class VerifyPaymentRequest {
+	@NotBlank(message = "Razorpay order ID cannot be blank")
 	private String razorpayOrderId;     // The order we created
+	
+	@NotBlank(message = "Razorpay payment ID cannot be blank")
 	private String razorpayPaymentId;   // Razorpay's payment confirmation ID
+	
+	@NotBlank(message = "Razorpay signature cannot be blank")
 	private String razorpaySignature;   // HMAC signature to verify authenticity
+	
+	@NotNull(message = "User ID cannot be null")
 	private Integer userId;             // Which user made the payment
 }

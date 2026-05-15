@@ -7,6 +7,12 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
+
 @Entity
 @Table(name = "budgets")
 @Getter
@@ -21,29 +27,38 @@ public class Budget {
 	private Integer budgetId;
 
 	@Column(nullable = false)
+	@NotNull(message = "User ID cannot be null")
 	private Integer userId;
 
 	@Column(nullable = false)
+	@NotNull(message = "Category ID cannot be null")
 	private Integer categoryId;
 
 	@Column(nullable = false)
+	@NotBlank(message = "Name cannot be blank")
 	private String name;
 
 	@Column(nullable = false, precision = 12, scale = 2)
+	@NotNull(message = "Limit amount cannot be null")
+	@Positive(message = "Limit amount must be positive")
 	private BigDecimal limitAmount;
 
 	@Column(length = 3)
 	@Builder.Default
+	@NotBlank(message = "Currency cannot be blank")
 	private String currency = "INR";
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
+	@NotNull(message = "Period cannot be null")
 	private BudgetPeriod period;
 
 	@Column(nullable = false)
+	@NotNull(message = "Start date cannot be null")
 	private LocalDate startDate;
 
 	@Column(nullable = false)
+	@NotNull(message = "End date cannot be null")
 	private LocalDate endDate;
 
 	@Column(nullable = false, precision = 12, scale = 2)
@@ -51,6 +66,9 @@ public class Budget {
 	private BigDecimal spentAmount = BigDecimal.ZERO;
 
 	@Column(nullable = false)
+	@NotNull(message = "Alert threshold cannot be null")
+	@Min(value = 1, message = "Alert threshold must be at least 1")
+	@Max(value = 100, message = "Alert threshold cannot be more than 100")
 	private Integer alertThreshold; // Percentage, e.g., 80 for 80%
 
 	@Column(nullable = false)

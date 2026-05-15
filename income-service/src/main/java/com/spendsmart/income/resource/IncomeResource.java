@@ -8,6 +8,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,7 +22,7 @@ public class IncomeResource {
 	private final IncomeService incomeService;
 
 	@PostMapping
-	public ResponseEntity<Income> addIncome(@RequestBody Income income) {
+	public ResponseEntity<Income> addIncome(@Valid @RequestBody Income income) {
 		return new ResponseEntity<>(incomeService.addIncome(income), HttpStatus.CREATED);
 	}
 
@@ -71,7 +72,7 @@ public class IncomeResource {
 	}
 
 	@PutMapping("/{incomeId}")
-	public ResponseEntity<Income> updateIncome(@PathVariable Integer incomeId, @RequestBody Income income) {
+	public ResponseEntity<Income> updateIncome(@PathVariable Integer incomeId, @Valid @RequestBody Income income) {
 		return ResponseEntity.ok(incomeService.updateIncome(incomeId, income));
 	}
 

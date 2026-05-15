@@ -46,7 +46,7 @@ public class AuthResource {
 	// Google OAuth2 login — the frontend sends the Google ID token here
 	// for server-side verification. No password needed.
 	@PostMapping("/google")
-	public ResponseEntity<AuthResponse> googleLogin(@RequestBody GoogleAuthRequest request) {
+	public ResponseEntity<AuthResponse> googleLogin(@Valid @RequestBody GoogleAuthRequest request) {
 		log.info("POST /auth/google endpoint hit");
 		return ResponseEntity.ok(authService.googleLogin(request));
 	}
@@ -85,7 +85,7 @@ public class AuthResource {
 	}
 
 	@PutMapping("/profile/{userId}")
-	public ResponseEntity<User> updateProfile(@PathVariable int userId, @RequestBody UpdateProfileRequest request) {
+	public ResponseEntity<User> updateProfile(@PathVariable int userId, @Valid @RequestBody UpdateProfileRequest request) {
 		int authenticatedUserId = (int) SecurityContextHolder.getContext().getAuthentication().getDetails();
 		if (authenticatedUserId != userId) {
 			throw new BadRequestException("Unauthorized: You cannot modify another user's profile.");

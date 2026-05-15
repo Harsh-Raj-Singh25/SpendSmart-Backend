@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -19,7 +20,7 @@ public class CategoryResource {
 	private final CategoryService categoryService;
 
 	@PostMapping
-	public ResponseEntity<Category> createCategory(@RequestBody Category category) {
+	public ResponseEntity<Category> createCategory(@Valid @RequestBody Category category) {
 		return new ResponseEntity<>(categoryService.createCategory(category), HttpStatus.CREATED);
 	}
 
@@ -61,7 +62,7 @@ public class CategoryResource {
 	}
 
 	@PutMapping("/{categoryId}")
-	public ResponseEntity<Category> update(@PathVariable Integer categoryId, @RequestBody Category category) {
+	public ResponseEntity<Category> update(@PathVariable Integer categoryId, @Valid @RequestBody Category category) {
 		return ResponseEntity.ok(categoryService.updateCategory(categoryId, category));
 	}
 

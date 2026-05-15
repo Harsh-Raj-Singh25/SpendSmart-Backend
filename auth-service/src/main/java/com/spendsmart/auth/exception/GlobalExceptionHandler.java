@@ -8,12 +8,50 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.validation.FieldError;
+import java.util.HashMap;
+import java.util.Map;
 
 import java.time.LocalDateTime;
 
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
+		Map<String, String> errors = new HashMap<>();
+		ex.getBindingResult().getAllErrors().forEach((error) -> {
+			String fieldName = ((FieldError) error).getField();
+			String errorMessage = error.getDefaultMessage();
+			errors.put(fieldName, errorMessage);
+		});
+
+		ErrorResponse errorResponse = ErrorResponse.builder()
+				.timestamp(LocalDateTime.now())
+				.status(HttpStatus.BAD_REQUEST.value())
+				.error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+				.message("Validation Failed")
+				.path(request.getRequestURI())
+				.validationErrors(errors)
+				.build();
+
+		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+	}
+
+	@ExceptionHandler(IllegalStateException.class)
+	public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex, HttpServletRequest request) {
+		ErrorResponse errorResponse = ErrorResponse.builder()
+				.timestamp(LocalDateTime.now())
+				.status(HttpStatus.BAD_REQUEST.value())
+				.error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+				.message(ex.getMessage())
+				.path(request.getRequestURI())
+				.build();
+
+		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+	}
 
 	// Handles our custom BadRequestException (e.g., Duplicate Email)
 	@ExceptionHandler(BadRequestException.class)
