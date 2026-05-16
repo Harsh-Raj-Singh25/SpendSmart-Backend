@@ -11,7 +11,7 @@ spring:
       globalcors: # Global CORS Configuration (Handles CORS for the whole platform)
         cors-configurations:
           '[/**]':
-            allowedOrigins: "${FRONTEND_ORIGIN:http://localhost:4200/}" # allowedOrigins: "${FRONTEND_ORIGIN:https://spend-smart-frontend-ten.vercel.app/}"
+            allowedOrigins: "${FRONTEND_ORIGIN:http://spend-smart.duckdns.org/}" # allowedOrigins: "${FRONTEND_ORIGIN:https://spend-smart-frontend-ten.vercel.app/}"
             allowedMethods:
               - GET
               - POST
