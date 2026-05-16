@@ -1,0 +1,182 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: spendsmart-db
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: spendsmart_auth
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  discovery-server:
+    build: ./discovery-server
+    container_name: discovery-server
+    ports:
+      - "8761:8761"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka/
+      AUTH_SERVICE_URL: http://auth-service:8081
+      EXPENSE_SERVICE_URL: http://expense-service:8082
+      INCOME_SERVICE_URL: http://income-service:8083
+      CATEGORY_SERVICE_URL: http://category-service:8084
+      BUDGET_SERVICE_URL: http://budget-service:8085
+      ANALYTICS_SERVICE_URL: http://analytics-service:8086
+      RECURRING_SERVICE_URL: http://recurring-transaction-service:8087
+      NOTIFICATION_SERVICE_URL: http://notification-service:8088
+      PAYMENT_SERVICE_URL: http://payment-service:8089
+      JWT_SECRET: ${JWT_SECRET}
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka/
+      AUTH_DB_URL: jdbc:mysql://mysql:3306/spendsmart_auth?useSSL=false&allowPublicKeyRetrieval=true
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS}
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+    depends_on:
+      - mysql
+      - discovery-server
+
+  expense-service:
+    build: ./expense-service
+    container_name: expense-service
+    ports:
+      - "8082:8082"
+    environment:
+      EXPENSE_DB_URL: jdbc:mysql://mysql:3306/spendsmart_expense?createDatabaseIfNotExist=true
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - mysql
+
+  income-service:
+    build: ./income-service
+    container_name: income-service
+    ports:
+      - "8083:8083"
+    environment:
+      INCOME_DB_URL: jdbc:mysql://mysql:3306/spendsmart_income?createDatabaseIfNotExist=true
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - mysql
+
+  category-service:
+    build: ./category-service
+    container_name: category-service
+    ports:
+      - "8084:8084"
+    environment:
+      CATEGORY_DB_URL: jdbc:mysql://mysql:3306/spendsmart_category?createDatabaseIfNotExist=true
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka/
+    depends_on:
+      - mysql
+
+  budget-service:
+    build: ./budget-service
+    container_name: budget-service
+    ports:
+      - "8085:8085"
+    environment:
+      BUDGET_DB_URL: jdbc:mysql://mysql:3306/spendsmart_budget?createDatabaseIfNotExist=true
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka/
+    depends_on:
+      - mysql
+
+  analytics-service:
+    build: ./analytics-service
+    container_name: analytics-service
+    ports:
+      - "8086:8086"
+    environment:
+      ANALYTICS_DB_URL: jdbc:mysql://mysql:3306/spendsmart_analytics?createDatabaseIfNotExist=true
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka/
+    depends_on:
+      - mysql
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    ports:
+      - "8088:8088"
+    environment:
+      NOTIFICATION_DB_URL: jdbc:mysql://mysql:3306/spendsmart_notification?createDatabaseIfNotExist=true
+      DB_PASSWORD: ${DB_PASSWORD}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka/
+    depends_on:
+      - mysql
+
+  recurring-transaction-service:
+    build: ./recurring-transaction-service
+    container_name: recurring-transaction-service
+    ports:
+      - "8087:8087"
+    environment:
+      RECURRING_DB_URL: jdbc:mysql://mysql:3306/spendsmart_recurring?createDatabaseIfNotExist=true
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka/
+    depends_on:
+      - mysql
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    ports:
+      - "8089:8089"
+    environment:
+      PAYMENT_DB_URL: jdbc:mysql://mysql:3306/spendsmart_payment?createDatabaseIfNotExist=true
+      DB_PASSWORD: ${DB_PASSWORD}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka/
+    depends_on:
+      - mysql
+
+  frontend:
+    build: ../SpendSmart-Frontend/spendsmart-frontend
+    container_name: spendsmart-frontend
+    ports:
+      - "4200:80"
+    environment:
+      API_BASE_URL: http://api-gateway:8080
+    depends_on:
+      - api-gateway
+
+volumes:
+  mysql_data:
